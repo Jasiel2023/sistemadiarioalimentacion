@@ -3,15 +3,33 @@ package com.equipodinamita.base.models;
 import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+
+@Entity
 public class Alimento {
-    private int id;
+
+    @Id 
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
     private String nombre;
     private Float calorias;
     private Float proteinas;
     private Float carbohidratos;
     private Float grasas;
     private Float porcionBase;
+
+    @Enumerated(EnumType.STRING)
     private UnidadEnum unidadMedida;
+
+    @OneToMany(mappedBy = "alimento", cascade = CascadeType.ALL)
     private List<RegistroConsumo> registrosConsumo = new ArrayList<>();
 
     public List<RegistroConsumo> getRegistrosConsumo() {
@@ -22,11 +40,11 @@ public class Alimento {
         this.registrosConsumo = registrosConsumo;
     }
 
-    public int getId() {
+   public Integer getId() { 
         return this.id;
     }
 
-    public void setId(int id) {
+    public void setId(Integer id) { 
         this.id = id;
     }
 
