@@ -1,9 +1,18 @@
 package com.equipodinamita.base.models;
 
+import com.vaadin.copilot.shaded.classgraph.nonapi.json.Id;
+
+import jakarta.persistence.*;
+
+@Entity
 public class RegistroConsumo {
-   private int cantidad;
-   private HorarioAlimenticioEnum horarioAlimenticio;
-   private ConsumoDiario consumoDiario;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+   private float cantidad;
+    @ManyToOne
+    @JoinColumn(name = "alimento_id")
+
    private Alimento alimento;
 
     public Alimento getAlimento() {
@@ -12,30 +21,21 @@ public class RegistroConsumo {
     public void setAlimento(Alimento alimento) {
          this.alimento = alimento;
     }
+public Integer getId() {
+        return id;
+    }
 
-   public ConsumoDiario getConsumoDiario() {
-       return this.consumoDiario;
-   }
+    public void setId(Integer id) {
+        this.id = id;
+    }
 
-   public void setConsumoDiario(ConsumoDiario consumoDiario) {
-       this.consumoDiario = consumoDiario;
-   }
 
-   public int getCantidad() {
+   public Float getCantidad() {
        return this.cantidad;
    }
 
-   public void setCantidad(int cantidad) {
+   public void setCantidad(Float cantidad) {
        this.cantidad = cantidad;
    }
-
-   public HorarioAlimenticioEnum getHorarioAlimenticio() {
-       return this.horarioAlimenticio;
-   }
-
-   public void setHorarioAlimenticio(HorarioAlimenticioEnum horarioAlimenticio) {
-       this.horarioAlimenticio = horarioAlimenticio;
-   }
-
 
 }
