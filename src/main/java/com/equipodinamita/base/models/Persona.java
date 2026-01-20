@@ -11,6 +11,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 
 
 @Entity
@@ -19,9 +21,13 @@ public class Persona {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @NotBlank(message = "El nombre no puede estar vacío")
     private String nombre;
+      @NotBlank(message = "El apellido no puede estar vacío")
     private String apellido;
 
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "El email debe tener un formato válido")
     @Column(unique = true)
     private String email;
 
@@ -33,6 +39,10 @@ public class Persona {
     private Date fechaNacimiento;
     private String telefono;
 
+    @NotBlank(message = "La contraseña no puede estar vacía")
+    private String password;
+
+    
 
     public Integer getId() {
         return this.id;
@@ -99,4 +109,21 @@ public class Persona {
         this.telefono = telefono;
     }
  
+
+    public RolEnum getRol() {
+        return this.rol;
+    }
+
+    public void setRol(RolEnum rol) {
+        this.rol = rol;
+    }
+
+    public String getPassword() {
+        return this.password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
 }
