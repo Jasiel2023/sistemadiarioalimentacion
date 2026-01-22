@@ -26,10 +26,7 @@ public class Persona {
       @NotBlank(message = "El apellido no puede estar vacío")
     private String apellido;
 
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El email debe tener un formato válido")
-    @Column(unique = true)
-    private String email;
+   
 
     @Enumerated(EnumType.STRING)
     private RolEnum rol;
@@ -39,10 +36,7 @@ public class Persona {
     private Date fechaNacimiento;
     private String telefono;
 
-    @NotBlank(message = "La contraseña no puede estar vacía")
-    private String password;
-
-    
+   
 
     public Integer getId() {
         return this.id;
@@ -68,13 +62,6 @@ public class Persona {
         this.apellido = apellido;
     }
 
-    public String getEmail() {
-        return this.email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
     
        
     public Float getEstaturaCm() {
@@ -118,12 +105,6 @@ public class Persona {
         this.rol = rol;
     }
 
-    public String getPassword() {
-        return this.password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+ 
 
 }
