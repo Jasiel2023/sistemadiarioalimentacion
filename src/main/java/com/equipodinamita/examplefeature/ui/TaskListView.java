@@ -1,8 +1,13 @@
 package com.equipodinamita.examplefeature.ui;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Optional;
+
 import com.equipodinamita.base.ui.ViewToolbar;
-import com.equipodinamita.examplefeature.Task;
 import com.equipodinamita.examplefeature.TaskService;
+import com.equipodinamita.examplefeature.models.Task;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -16,12 +21,6 @@ import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
-import java.util.Optional;
-
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
 
 @Route("")
@@ -41,15 +40,15 @@ class TaskListView extends VerticalLayout {
 
         description = new TextField();
         description.setPlaceholder("What do you want to do?");
-        description.setAriaLabel("Task description");
+        description.setAriaLabel("Task description lol");
         description.setMaxLength(Task.DESCRIPTION_MAX_LENGTH);
         description.setMinWidth("20em");
 
         dueDate = new DatePicker();
-        dueDate.setPlaceholder("Due date");
+        dueDate.setPlaceholder("Due date ojio");
         dueDate.setAriaLabel("Due date");
 
-        createBtn = new Button("Create", event -> createTask());
+        createBtn = new Button("Create aca", event -> createTask());
         createBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         var dateTimeFormatter = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(getLocale())
@@ -58,7 +57,7 @@ class TaskListView extends VerticalLayout {
 
         taskGrid = new Grid<>();
         taskGrid.setItems(query -> taskService.list(toSpringPageRequest(query)).stream());
-        taskGrid.addColumn(Task::getDescription).setHeader("Description");
+        taskGrid.addColumn(Task::getDescription).setHeader("Description Lol");
         taskGrid.addColumn(task -> Optional.ofNullable(task.getDueDate()).map(dateFormatter::format).orElse("Never"))
                 .setHeader("Due Date");
         taskGrid.addColumn(task -> dateTimeFormatter.format(task.getCreationDate())).setHeader("Creation Date");

@@ -3,7 +3,6 @@ package com.equipodinamita.base.models;
 
 
 import jakarta.persistence.Entity;
-
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,7 +15,7 @@ public class RegistroConsumo {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-   private float cantidad;
+   private Float cantidad;
     @ManyToOne
     @JoinColumn(name = "alimento_id")
 

@@ -14,6 +14,8 @@ import jakarta.persistence.OneToMany;
 
 @Entity
 public class Alimento {
+    public static final int DESCRIPTION_MAX_LENGTH = 300;
+
 
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,6 +31,9 @@ public class Alimento {
     @Enumerated(EnumType.STRING)
     private UnidadEnum unidadMedida;
 
+    @Enumerated(EnumType.STRING)
+    private CategoriaEnum categoria;
+
     @OneToMany(mappedBy = "alimento", cascade = CascadeType.ALL)
     private List<RegistroConsumo> registrosConsumo = new ArrayList<>();
 
@@ -39,6 +44,21 @@ public class Alimento {
     public void setRegistrosConsumo(List<RegistroConsumo> registrosConsumo) {
         this.registrosConsumo = registrosConsumo;
     }
+
+    protected Alimento(){
+    }
+
+    public Alimento(String nombre, Float calorias, Float proteinas, Float carbohidratos, Float grasas, Float porcionBase, UnidadEnum unidadMedida, CategoriaEnum categoria){
+        setNombre(nombre);
+        setCalorias(calorias);
+        setProteinas(proteinas);
+        setCarbohidratos(carbohidratos);
+        setGrasas(grasas);
+        setPorcionBase(porcionBase);
+        setUnidadMedida(unidadMedida);
+        setCategoria(categoria);
+    }
+
 
    public Integer getId() { 
         return this.id;
@@ -103,4 +123,13 @@ public class Alimento {
     public void setUnidadMedida(UnidadEnum unidadMedida) {
         this.unidadMedida = unidadMedida;
     }
+
+        public CategoriaEnum getCategoria() {
+        return this.categoria;
+    }
+
+    public void setCategoria(CategoriaEnum categoria) {
+        this.categoria = categoria;
+    }
+
 }
