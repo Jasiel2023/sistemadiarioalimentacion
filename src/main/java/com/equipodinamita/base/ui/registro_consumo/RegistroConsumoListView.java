@@ -37,8 +37,9 @@ public class RegistroConsumoListView extends VerticalLayout {
     private final Grid<RegistroConsumo> grid;
     private final Button crearBtn;
     private VerticalLayout itemsContainer;
-    private VerticalLayout itemsContainerMerienda;
     private VerticalLayout itemsContainerAlmuerzo;
+    private VerticalLayout itemsContainerCena;
+    private VerticalLayout itemsContainerEntretiempo;
 
     public RegistroConsumoListView(
             RegistroConsumoService registroService,
@@ -58,12 +59,30 @@ public class RegistroConsumoListView extends VerticalLayout {
         setSpacing(false);
         getStyle().setOverflow(Style.Overflow.HIDDEN);
 
+        // Contenedor vertical para organizar filas de cuadros
+        VerticalLayout cardsWrapper = new VerticalLayout();
+        cardsWrapper.setWidthFull();
+        cardsWrapper.setPadding(true);
+        cardsWrapper.setSpacing(true);
+
+        // Primera fila: dos cuadros
+        HorizontalLayout firstRow = new HorizontalLayout();
+        firstRow.setWidthFull();
+        firstRow.setSpacing(true);
+        firstRow.add(createBreakfastCard(), createMeriendaCard());
+
+        // Segunda fila: dos cuadros
+        HorizontalLayout secondRow = new HorizontalLayout();
+        secondRow.setWidthFull();
+        secondRow.setSpacing(true);
+        secondRow.add(createAlmuerzoCard(), createEntretiempoCard());
+
+        cardsWrapper.add(firstRow, secondRow);
+
         add(
                 new ViewToolbar(
                         "Registro de Consumo"),
-                createBreakfastCard(),
-                createMeriendaCard(),
-                createAlmuerzoCard());
+                cardsWrapper);
     }
 
     private VerticalLayout createBreakfastCard() {
@@ -79,9 +98,15 @@ public class RegistroConsumoListView extends VerticalLayout {
     }
 
     private VerticalLayout createMeriendaCard() {
-        itemsContainerMerienda = new VerticalLayout();
-        refreshMeriendaItems();
-        return createMealCard("MERIENDA", itemsContainerMerienda, e -> openEditListDialogMerienda());
+        itemsContainerCena = new VerticalLayout();
+        refreshCenaItems();
+        return createMealCard("CENA", itemsContainerCena, e -> openEditListDialogMerienda());
+    }
+
+    private VerticalLayout createEntretiempoCard() {
+        itemsContainerEntretiempo = new VerticalLayout();
+        refreshEntretiempoItems();
+        return createMealCard("ENTRETIEMPOS", itemsContainerEntretiempo, e -> openEditListDialogEntretiempo());
     }
 
     private VerticalLayout createMealCard(String titleText, VerticalLayout itemsLayout,
@@ -184,9 +209,8 @@ public class RegistroConsumoListView extends VerticalLayout {
                 });
     }
 
-    private void refreshMeriendaItems() {
-        itemsContainerMerienda
-                .removeAll();
+    private void refreshCenaItems() {
+        itemsContainerCena.removeAll();
         registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA,
                 org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
                     if (registro.getAlimento() != null) {
@@ -196,7 +220,24 @@ public class RegistroConsumoListView extends VerticalLayout {
                                 ? registro.getAlimento().getUnidadMedida().name()
                                 : "";
                         String macros = "Cantidad: " + cantidad + " " + unidad;
-                        itemsContainerMerienda
+                        itemsContainerCena
+                                .add(createFoodRow(nombreAlimento, macros));
+                    }
+                });
+    }
+
+    private void refreshEntretiempoItems() {
+        itemsContainerEntretiempo.removeAll();
+        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS,
+                org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
+                    if (registro.getAlimento() != null) {
+                        String nombreAlimento = registro.getAlimento().getNombre();
+                        String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
+                        String unidad = registro.getAlimento().getUnidadMedida() != null
+                                ? registro.getAlimento().getUnidadMedida().name()
+                                : "";
+                        String macros = "Cantidad: " + cantidad + " " + unidad;
+                        itemsContainerEntretiempo
                                 .add(createFoodRow(nombreAlimento, macros));
                     }
                 });
@@ -228,23 +269,21 @@ public class RegistroConsumoListView extends VerticalLayout {
     }
 
     // ---------------- DIALOG DESAYUNO ----------------
-
     private void openEditListDialog() {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Editar Lista de Desayuno");
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
-            openCreateDialog(HorarioAlimenticioEnum.DESAYUNO);
-            dialog.close();
-        });
-        crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        dialog.getHeader().add(crearEnDialogoBtn);
-
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
         dialogGrid.setItems(query -> registroService
                 .listByHorarioAlimenticio(HorarioAlimenticioEnum.DESAYUNO, toSpringPageRequest(query)).stream());
+
+        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+            openCreateDialog(HorarioAlimenticioEnum.DESAYUNO, dialogGrid);
+        });
+        crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getHeader().add(crearEnDialogoBtn);
 
         dialogGrid.addColumn(rc -> rc.getAlimento() != null
                 ? safeText(rc.getAlimento().getNombre())
@@ -256,9 +295,9 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         dialogGrid.addColumn(rc -> rc.getCantidad() != null ? rc.getCantidad() : "—").setHeader("Cantidad");
 
-        dialogGrid.addComponentColumn(this::createEditButton).setHeader("Editar");
+        dialogGrid.addComponentColumn(registro -> createEditButton(registro, dialogGrid)).setHeader("Editar");
 
-        dialogGrid.addComponentColumn(this::createDeleteButton).setHeader("Eliminar");
+        dialogGrid.addComponentColumn(registro -> createDeleteButton(registro, dialogGrid)).setHeader("Eliminar");
 
         dialogGrid.setSizeFull();
         dialogGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -282,16 +321,15 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
-            openCreateDialog(HorarioAlimenticioEnum.ALMUERZO);
-            dialog.close();
-        });
-        crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        dialog.getHeader().add(crearEnDialogoBtn);
-
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
         dialogGrid.setItems(query -> registroService
                 .listByHorarioAlimenticio(HorarioAlimenticioEnum.ALMUERZO, toSpringPageRequest(query)).stream());
+
+        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+            openCreateDialog(HorarioAlimenticioEnum.ALMUERZO, dialogGrid);
+        });
+        crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getHeader().add(crearEnDialogoBtn);
 
         dialogGrid.addColumn(rc -> rc.getAlimento() != null
                 ? safeText(rc.getAlimento().getNombre())
@@ -303,9 +341,9 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         dialogGrid.addColumn(rc -> rc.getCantidad() != null ? rc.getCantidad() : "—").setHeader("Cantidad");
 
-        dialogGrid.addComponentColumn(this::createEditButton).setHeader("Editar");
+        dialogGrid.addComponentColumn(registro -> createEditButton(registro, dialogGrid)).setHeader("Editar");
 
-        dialogGrid.addComponentColumn(this::createDeleteButton).setHeader("Eliminar");
+        dialogGrid.addComponentColumn(registro -> createDeleteButton(registro, dialogGrid)).setHeader("Eliminar");
 
         dialogGrid.setSizeFull();
         dialogGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -325,20 +363,19 @@ public class RegistroConsumoListView extends VerticalLayout {
     // ---------------- DIALOG MERIENDA ----------------
     private void openEditListDialogMerienda() {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Editar Lista");
+        dialog.setHeaderTitle("Editar Lista de Cena");
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo (Merienda)", e -> {
-            openCreateDialog(HorarioAlimenticioEnum.ENTRETIEMPOS);
-            dialog.close();
+        Grid<RegistroConsumo> dialogGrid = new Grid<>();
+        dialogGrid.setItems(query -> registroService
+                .listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA, toSpringPageRequest(query)).stream());
+
+        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+            openCreateDialog(HorarioAlimenticioEnum.CENA, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         dialog.getHeader().add(crearEnDialogoBtn);
-
-        Grid<RegistroConsumo> dialogGrid = new Grid<>();
-        dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS, toSpringPageRequest(query)).stream());
 
         dialogGrid.addColumn(rc -> rc.getAlimento() != null
                 ? safeText(rc.getAlimento().getNombre())
@@ -350,9 +387,55 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         dialogGrid.addColumn(rc -> rc.getCantidad() != null ? rc.getCantidad() : "—").setHeader("Cantidad");
 
-        dialogGrid.addComponentColumn(this::createEditButton).setHeader("Editar");
+        dialogGrid.addComponentColumn(registro -> createEditButton(registro, dialogGrid)).setHeader("Editar");
 
-        dialogGrid.addComponentColumn(this::createDeleteButton).setHeader("Eliminar");
+        dialogGrid.addComponentColumn(registro -> createDeleteButton(registro, dialogGrid)).setHeader("Eliminar");
+
+        dialogGrid.setSizeFull();
+        dialogGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
+        dialogGrid.setEmptyStateText("No hay registros de consumo");
+
+        VerticalLayout layout = new VerticalLayout(dialogGrid);
+        layout.setSizeFull();
+        layout.setPadding(false);
+
+        Button cerrarBtn = createCloseButton(dialog);
+
+        dialog.add(layout);
+        dialog.getFooter().add(cerrarBtn);
+        dialog.open();
+    }
+
+    // ---------------- DIALOG ENTRETIEMPOS ----------------
+    private void openEditListDialogEntretiempo() {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Editar Lista de Entretiempos");
+        dialog.setWidth("80%");
+        dialog.setHeight("80%");
+
+        Grid<RegistroConsumo> dialogGrid = new Grid<>();
+        dialogGrid.setItems(query -> registroService
+                .listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS, toSpringPageRequest(query)).stream());
+
+        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+            openCreateDialog(HorarioAlimenticioEnum.ENTRETIEMPOS, dialogGrid);
+        });
+        crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        dialog.getHeader().add(crearEnDialogoBtn);
+
+        dialogGrid.addColumn(rc -> rc.getAlimento() != null
+                ? safeText(rc.getAlimento().getNombre())
+                : "—").setHeader("Alimento");
+
+        dialogGrid.addColumn(rc -> rc.getAlimento() != null
+                ? safeEnum(rc.getAlimento().getUnidadMedida())
+                : "—").setHeader("Unidad");
+
+        dialogGrid.addColumn(rc -> rc.getCantidad() != null ? rc.getCantidad() : "—").setHeader("Cantidad");
+
+        dialogGrid.addComponentColumn(registro -> createEditButton(registro, dialogGrid)).setHeader("Editar");
+
+        dialogGrid.addComponentColumn(registro -> createDeleteButton(registro, dialogGrid)).setHeader("Eliminar");
 
         dialogGrid.setSizeFull();
         dialogGrid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -370,10 +453,14 @@ public class RegistroConsumoListView extends VerticalLayout {
     }
 
     private void openCreateDialog() {
-        openCreateDialog(HorarioAlimenticioEnum.DESAYUNO);
+        openCreateDialog(HorarioAlimenticioEnum.DESAYUNO, null);
     }
 
     private void openCreateDialog(HorarioAlimenticioEnum horarioAlimenticio) {
+        openCreateDialog(horarioAlimenticio, null);
+    }
+
+    private void openCreateDialog(HorarioAlimenticioEnum horarioAlimenticio, Grid<RegistroConsumo> dialogGrid) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Nuevo Registro de Consumo");
 
@@ -406,12 +493,25 @@ public class RegistroConsumoListView extends VerticalLayout {
                     cantidadField.getValue().floatValue(),
                     horarioAlimenticio);
 
+            // Refrescar el grid principal
+            grid.getDataProvider().refreshAll();
+
+            // Refrescar el grid del diálogo si está presente
+            if (dialogGrid != null) {
+                dialogGrid.getDataProvider().refreshAll();
+            }
+
+            // Refrescar las tarjetas según el horario
             if (horarioAlimenticio == HorarioAlimenticioEnum.DESAYUNO) {
                 refreshBreakfastItems();
+            } else if (horarioAlimenticio == HorarioAlimenticioEnum.ALMUERZO) {
+                refreshAlmuerzoItems();
+            } else if (horarioAlimenticio == HorarioAlimenticioEnum.CENA) {
+                refreshCenaItems();
             } else if (horarioAlimenticio == HorarioAlimenticioEnum.ENTRETIEMPOS) {
-                refreshMeriendaItems();
+                refreshEntretiempoItems();
             }
-            grid.getDataProvider().refreshAll();
+
             dialog.close();
 
             Notification.show(
@@ -432,7 +532,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.open();
     }
 
-    private void openEditDialog(RegistroConsumo registro) {
+    private void openEditDialog(RegistroConsumo registro, Grid<RegistroConsumo> dialogGrid) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Editar Registro");
 
@@ -455,7 +555,26 @@ public class RegistroConsumoListView extends VerticalLayout {
             registro.setCantidad(cantidadField.getValue().floatValue());
 
             registroService.actualizarRegistro(registro);
+
+            // Refrescar el grid principal
             grid.getDataProvider().refreshAll();
+
+            // Refrescar el grid del diálogo si está presente
+            if (dialogGrid != null) {
+                dialogGrid.getDataProvider().refreshAll();
+            }
+
+            // Refrescar las tarjetas según el horario
+            if (registro.getHorarioAlimenticio() == HorarioAlimenticioEnum.DESAYUNO) {
+                refreshBreakfastItems();
+            } else if (registro.getHorarioAlimenticio() == HorarioAlimenticioEnum.ALMUERZO) {
+                refreshAlmuerzoItems();
+            } else if (registro.getHorarioAlimenticio() == HorarioAlimenticioEnum.CENA) {
+                refreshCenaItems();
+            } else if (registro.getHorarioAlimenticio() == HorarioAlimenticioEnum.ENTRETIEMPOS) {
+                refreshEntretiempoItems();
+            }
+
             dialog.close();
 
             Notification.show(
@@ -476,7 +595,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.open();
     }
 
-    private void openDeleteDialog(RegistroConsumo registro) {
+    private void openDeleteDialog(RegistroConsumo registro, Grid<RegistroConsumo> dialogGrid) {
         Dialog dialog = new Dialog();
         dialog.setHeaderTitle("Eliminar Registro");
 
@@ -488,8 +607,28 @@ public class RegistroConsumoListView extends VerticalLayout {
                         + "?");
 
         Button eliminarBtn = new Button("Eliminar", e -> {
+            HorarioAlimenticioEnum horario = registro.getHorarioAlimenticio();
             registroService.eliminarRegistro(registro.getId());
+
+            // Refrescar el grid principal
             grid.getDataProvider().refreshAll();
+
+            // Refrescar el grid del diálogo si está presente
+            if (dialogGrid != null) {
+                dialogGrid.getDataProvider().refreshAll();
+            }
+
+            // Refrescar las tarjetas según el horario
+            if (horario == HorarioAlimenticioEnum.DESAYUNO) {
+                refreshBreakfastItems();
+            } else if (horario == HorarioAlimenticioEnum.ALMUERZO) {
+                refreshAlmuerzoItems();
+            } else if (horario == HorarioAlimenticioEnum.CENA) {
+                refreshCenaItems();
+            } else if (horario == HorarioAlimenticioEnum.ENTRETIEMPOS) {
+                refreshEntretiempoItems();
+            }
+
             dialog.close();
 
             Notification.show(
@@ -516,17 +655,17 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     // --- MÉTODOS AUXILIARES PARA BOTONES REUTILIZABLES ---
 
-    private Button createEditButton(RegistroConsumo registro) {
+    private Button createEditButton(RegistroConsumo registro, Grid<RegistroConsumo> dialogGrid) {
         Button button = new Button("Editar");
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_TERTIARY);
-        button.addClickListener(e -> openEditDialog(registro));
+        button.addClickListener(e -> openEditDialog(registro, dialogGrid));
         return button;
     }
 
-    private Button createDeleteButton(RegistroConsumo registro) {
+    private Button createDeleteButton(RegistroConsumo registro, Grid<RegistroConsumo> dialogGrid) {
         Button button = new Button("Eliminar");
         button.addThemeVariants(ButtonVariant.LUMO_ERROR, ButtonVariant.LUMO_TERTIARY);
-        button.addClickListener(e -> openDeleteDialog(registro));
+        button.addClickListener(e -> openDeleteDialog(registro, dialogGrid));
         return button;
     }
 
