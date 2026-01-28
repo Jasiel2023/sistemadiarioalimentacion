@@ -14,6 +14,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -79,10 +81,61 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         cardsWrapper.add(firstRow, secondRow);
 
+        // --- BOTÓN VER CONSUMO EN LA PARTE INFERIOR ---
+        HorizontalLayout bottomButtonContainer = createVerConsumoButton();
+
         add(
                 new ViewToolbar(
                         "Registro de Consumo"),
-                cardsWrapper);
+                cardsWrapper,
+                bottomButtonContainer);
+    }
+
+    private HorizontalLayout createVerConsumoButton() {
+        HorizontalLayout container = new HorizontalLayout();
+        container.setWidthFull();
+        container.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        container.setAlignItems(FlexComponent.Alignment.CENTER);
+        container.getStyle().set("margin-top", "auto").set("padding", "20px");
+
+        // Contenedor para los botones desplegables
+        HorizontalLayout botonesOpciones = new HorizontalLayout();
+        botonesOpciones.setSpacing(true);
+        botonesOpciones.setVisible(false);
+
+        Button btnDiario = new Button("Diario", new Icon(VaadinIcon.CALENDAR), e -> {
+            Notification.show("Vista Diaria", 2000, Notification.Position.BOTTOM_CENTER);
+            // Aquí puedes agregar la lógica para mostrar consumo diario
+        });
+        btnDiario.getStyle()
+                .set("background-color", "#4CAF50")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px");
+
+        Button btnSemanal = new Button("Semanal", new Icon(VaadinIcon.CALENDAR_CLOCK), e -> {
+            Notification.show("Vista Semanal", 2000, Notification.Position.BOTTOM_CENTER);
+            // Aquí puedes agregar la lógica para mostrar consumo semanal
+        });
+        btnSemanal.getStyle()
+                .set("background-color", "#2196F3")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px");
+
+        botonesOpciones.add(btnDiario, btnSemanal);
+
+        // Botón principal "Ver Consumo"
+        Button btnVerConsumo = new Button("Ver Consumo", new Icon(VaadinIcon.CHART), e -> {
+            botonesOpciones.setVisible(!botonesOpciones.isVisible());
+        });
+        btnVerConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnVerConsumo.getStyle()
+                .set("background-color", "#6a419d")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px")
+                .set("padding", "10px 20px");
+
+        container.add(btnVerConsumo, botonesOpciones);
+        return container;
     }
 
     private VerticalLayout createBreakfastCard() {
@@ -142,6 +195,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         HorizontalLayout header = new HorizontalLayout();
         header.setWidthFull();
         header.setPadding(true);
+        header.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         header.getStyle().set("background-color", "#e5e0eb");
 
         H3 titleComponent = new H3(title);
@@ -166,7 +220,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     private Button createViewListButton(
             com.vaadin.flow.component.ComponentEventListener<com.vaadin.flow.component.ClickEvent<Button>> clickListener) {
-        Button button = new Button("Ver Lista", clickListener);
+        Button button = new Button("Ver lista", new Icon(VaadinIcon.EYE), clickListener);
         button.getStyle()
                 .set("background-color", "#6a419d")
                 .set("color", "#ffffff")
@@ -271,7 +325,7 @@ public class RegistroConsumoListView extends VerticalLayout {
     // ---------------- DIALOG DESAYUNO ----------------
     private void openEditListDialog() {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Editar Lista de Desayuno");
+        dialog.setHeaderTitle("Editar lista de Desayuno");
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
@@ -279,7 +333,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialogGrid.setItems(query -> registroService
                 .listByHorarioAlimenticio(HorarioAlimenticioEnum.DESAYUNO, toSpringPageRequest(query)).stream());
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.DESAYUNO, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -317,7 +371,7 @@ public class RegistroConsumoListView extends VerticalLayout {
     // ----------Dialog ALMUERZO ----------------
     private void openEditListDialogAlmuerzo() {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Editar Lista de Almuerzo");
+        dialog.setHeaderTitle("Editar lista de Almuerzo");
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
@@ -325,7 +379,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialogGrid.setItems(query -> registroService
                 .listByHorarioAlimenticio(HorarioAlimenticioEnum.ALMUERZO, toSpringPageRequest(query)).stream());
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ALMUERZO, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -363,7 +417,7 @@ public class RegistroConsumoListView extends VerticalLayout {
     // ---------------- DIALOG MERIENDA ----------------
     private void openEditListDialogMerienda() {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Editar Lista de Cena");
+        dialog.setHeaderTitle("Editar lista de Cena");
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
@@ -371,7 +425,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialogGrid.setItems(query -> registroService
                 .listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA, toSpringPageRequest(query)).stream());
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.CENA, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -409,7 +463,7 @@ public class RegistroConsumoListView extends VerticalLayout {
     // ---------------- DIALOG ENTRETIEMPOS ----------------
     private void openEditListDialogEntretiempo() {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("Editar Lista de Entretiempos");
+        dialog.setHeaderTitle("Editar lista de Entretiempos");
         dialog.setWidth("80%");
         dialog.setHeight("80%");
 
@@ -417,7 +471,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialogGrid.setItems(query -> registroService
                 .listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS, toSpringPageRequest(query)).stream());
 
-        Button crearEnDialogoBtn = new Button("Crear Nuevo Consumo", e -> {
+        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ENTRETIEMPOS, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
