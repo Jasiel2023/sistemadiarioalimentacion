@@ -1,8 +1,12 @@
 package com.equipodinamita.base.ui.registro_consumo;
 
+import java.util.Map;
+
 import com.equipodinamita.base.Service.AlimentoService;
+import com.equipodinamita.base.Service.ConsumoDiarioService;
 import com.equipodinamita.base.Service.RegistroConsumoService;
 import com.equipodinamita.base.models.Alimento;
+import com.equipodinamita.base.models.ConsumoDiario;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
 import com.equipodinamita.base.ui.ViewToolbar;
@@ -35,6 +39,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     private final RegistroConsumoService registroService;
     private final AlimentoService alimentoService;
+    private final ConsumoDiarioService consumoDiarioService;
 
     private final Grid<RegistroConsumo> grid;
     private final Button crearBtn;
@@ -45,10 +50,12 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     public RegistroConsumoListView(
             RegistroConsumoService registroService,
-            AlimentoService alimentoService) {
+            AlimentoService alimentoService,
+            ConsumoDiarioService consumoDiarioService) {
 
         this.registroService = registroService;
         this.alimentoService = alimentoService;
+        this.consumoDiarioService = consumoDiarioService;
 
         crearBtn = new Button("Crear registro", e -> openCreateDialog());
         crearBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -104,8 +111,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         botonesOpciones.setVisible(false);
 
         Button btnDiario = new Button("Diario", new Icon(VaadinIcon.CALENDAR), e -> {
-            Notification.show("Vista Diaria", 2000, Notification.Position.BOTTOM_CENTER);
-            // Aquí puedes agregar la lógica para mostrar consumo diario
+            openConsumoDiarioDialog();
         });
         btnDiario.getStyle()
                 .set("background-color", "#4CAF50")
@@ -136,6 +142,228 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         container.add(btnVerConsumo, botonesOpciones);
         return container;
+    }
+
+    private void openConsumoDiarioDialog() {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("📊 Resumen de Consumo Diario");
+        dialog.setWidth("900px");
+        dialog.setHeight("700px");
+        dialog.setCloseOnEsc(true);
+        dialog.setCloseOnOutsideClick(true);
+
+        VerticalLayout content = new VerticalLayout();
+        content.setPadding(true);
+        content.setSpacing(true);
+        content.getStyle().set("overflow-y", "auto");
+
+        // Obtener el total de consumo diario
+        ConsumoDiario totalDiario = consumoDiarioService.calcularTotalConsumoDiario();
+
+        if (totalDiario.getTotalRegistros() == 0) {
+            content.add(new H3("⚠️ No hay registros de consumo para hoy"));
+            dialog.add(content);
+            dialog.open();
+            return;
+        }
+
+        // === SECCIÓN: RESUMEN TOTAL ===
+        VerticalLayout resumenSection = new VerticalLayout();
+        resumenSection.setPadding(true);
+        resumenSection.getStyle()
+                .set("background-color", "#f5f5f5")
+                .set("border-radius", "12px")
+                .set("margin-bottom", "20px");
+
+        H3 tituloResumen = new H3("🍽️ Resumen Total del Día");
+        tituloResumen.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+
+        HorizontalLayout statsLayout = new HorizontalLayout();
+        statsLayout.setWidthFull();
+        statsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
+
+        statsLayout.add(
+                createStatCard("🔥 Calorías", String.format("%.1f kcal", totalDiario.getCalorias()), "#FF6B6B"),
+                createStatCard("🥩 Proteínas", String.format("%.1f g", totalDiario.getProteinas()), "#4ECDC4"),
+                createStatCard("🍞 Carbohidratos", String.format("%.1f g", totalDiario.getCarbohidratos()), "#FFE66D"),
+                createStatCard("🧈 Grasas", String.format("%.1f g", totalDiario.getGrasas()), "#95E1D3")
+        );
+
+        Span totalAlimentos = new Span("📋 Total de alimentos registrados: " + totalDiario.getTotalRegistros());
+        totalAlimentos.getStyle()
+                .set("font-size", "16px")
+                .set("font-weight", "bold")
+                .set("margin-top", "15px");
+
+        resumenSection.add(tituloResumen, statsLayout, totalAlimentos);
+        content.add(resumenSection);
+
+        // === SECCIÓN: PROMEDIO POR HORARIO ===
+        Map<HorarioAlimenticioEnum, ConsumoDiario> promediosPorHorario = consumoDiarioService.calcularPromedioPorCadaHorario();
+
+        VerticalLayout horarioSection = new VerticalLayout();
+        horarioSection.setPadding(true);
+        horarioSection.getStyle()
+                .set("background-color", "#e8f4fd")
+                .set("border-radius", "12px")
+                .set("margin-bottom", "20px");
+
+        H3 tituloHorarios = new H3("⏰ Consumo por Tipo de Comida");
+        tituloHorarios.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+        horarioSection.add(tituloHorarios);
+
+        HorizontalLayout horariosGrid = new HorizontalLayout();
+        horariosGrid.setWidthFull();
+        horariosGrid.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
+        horariosGrid.getStyle().set("flex-wrap", "wrap");
+
+        for (HorarioAlimenticioEnum horario : HorarioAlimenticioEnum.values()) {
+            ConsumoDiario consumoHorario = promediosPorHorario.get(horario);
+            if (consumoHorario != null && consumoHorario.getTotalRegistros() > 0) {
+                horariosGrid.add(createHorarioCard(horario, consumoHorario));
+            }
+        }
+
+        horarioSection.add(horariosGrid);
+        content.add(horarioSection);
+
+        // === SECCIÓN: DETALLE DE ALIMENTOS ===
+        VerticalLayout detalleSection = new VerticalLayout();
+        detalleSection.setPadding(true);
+        detalleSection.getStyle()
+                .set("background-color", "#fff3e0")
+                .set("border-radius", "12px");
+
+        H3 tituloDetalle = new H3("📝 Detalle de Alimentos Consumidos");
+        tituloDetalle.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+        detalleSection.add(tituloDetalle);
+
+        // Grid con los alimentos detallados
+        Grid<RegistroConsumo> gridDetalle = new Grid<>();
+        gridDetalle.setItems(totalDiario.getRegistros());
+        gridDetalle.setHeight("250px");
+        gridDetalle.addThemeVariants(GridVariant.LUMO_ROW_STRIPES, GridVariant.LUMO_COMPACT);
+
+        gridDetalle.addColumn(r -> r.getAlimento() != null ? r.getAlimento().getNombre() : "N/A")
+                .setHeader("🍴 Alimento")
+                .setFlexGrow(2);
+
+        gridDetalle.addColumn(r -> r.getHorarioAlimenticio() != null ? r.getHorarioAlimenticio().name() : "N/A")
+                .setHeader("⏰ Horario")
+                .setFlexGrow(1);
+
+        gridDetalle.addColumn(r -> {
+            if (r.getCantidad() != null && r.getAlimento() != null && r.getAlimento().getUnidadMedida() != null) {
+                return String.format("%.1f %s", r.getCantidad(), r.getAlimento().getUnidadMedida().name());
+            }
+            return r.getCantidad() != null ? String.format("%.1f", r.getCantidad()) : "N/A";
+        }).setHeader("📏 Cantidad").setFlexGrow(1);
+
+        gridDetalle.addColumn(r -> {
+            if (r.getAlimento() != null && r.getCantidad() != null) {
+                Alimento a = r.getAlimento();
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
+                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float calorias = a.getCalorias() != null ? a.getCalorias() * factor : 0;
+                return String.format("%.1f kcal", calorias);
+            }
+            return "N/A";
+        }).setHeader("🔥 Calorías").setFlexGrow(1);
+
+        gridDetalle.addColumn(r -> {
+            if (r.getAlimento() != null && r.getCantidad() != null) {
+                Alimento a = r.getAlimento();
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
+                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float proteinas = a.getProteinas() != null ? a.getProteinas() * factor : 0;
+                return String.format("%.1f g", proteinas);
+            }
+            return "N/A";
+        }).setHeader("🥩 Proteínas").setFlexGrow(1);
+
+        gridDetalle.addColumn(r -> {
+            if (r.getAlimento() != null && r.getCantidad() != null) {
+                Alimento a = r.getAlimento();
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
+                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float carbos = a.getCarbohidratos() != null ? a.getCarbohidratos() * factor : 0;
+                return String.format("%.1f g", carbos);
+            }
+            return "N/A";
+        }).setHeader("🍞 Carbos").setFlexGrow(1);
+
+        gridDetalle.addColumn(r -> {
+            if (r.getAlimento() != null && r.getCantidad() != null) {
+                Alimento a = r.getAlimento();
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
+                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float grasas = a.getGrasas() != null ? a.getGrasas() * factor : 0;
+                return String.format("%.1f g", grasas);
+            }
+            return "N/A";
+        }).setHeader("🧈 Grasas").setFlexGrow(1);
+
+        detalleSection.add(gridDetalle);
+        content.add(detalleSection);
+
+        // Botón cerrar
+        Button cerrarBtn = new Button("Cerrar", e -> dialog.close());
+        cerrarBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        dialog.add(content);
+        dialog.getFooter().add(cerrarBtn);
+        dialog.open();
+    }
+
+    private VerticalLayout createStatCard(String titulo, String valor, String color) {
+        VerticalLayout card = new VerticalLayout();
+        card.setAlignItems(FlexComponent.Alignment.CENTER);
+        card.setPadding(true);
+        card.getStyle()
+                .set("background-color", color)
+                .set("border-radius", "10px")
+                .set("min-width", "140px")
+                .set("color", "#fff");
+
+        Span tituloSpan = new Span(titulo);
+        tituloSpan.getStyle().set("font-size", "12px").set("font-weight", "bold");
+
+        Span valorSpan = new Span(valor);
+        valorSpan.getStyle().set("font-size", "18px").set("font-weight", "bold");
+
+        card.add(tituloSpan, valorSpan);
+        return card;
+    }
+
+    private VerticalLayout createHorarioCard(HorarioAlimenticioEnum horario, ConsumoDiario consumo) {
+        VerticalLayout card = new VerticalLayout();
+        card.setAlignItems(FlexComponent.Alignment.CENTER);
+        card.setPadding(true);
+        card.getStyle()
+                .set("background-color", "#ffffff")
+                .set("border-radius", "10px")
+                .set("box-shadow", "0 2px 4px rgba(0,0,0,0.1)")
+                .set("min-width", "180px")
+                .set("margin", "5px");
+
+        String emoji = switch (horario) {
+            case DESAYUNO -> "🌅";
+            case ALMUERZO -> "☀️";
+            case CENA -> "🌙";
+            case ENTRETIEMPOS -> "🍿";
+        };
+
+        Span tituloSpan = new Span(emoji + " " + horario.name());
+        tituloSpan.getStyle().set("font-weight", "bold").set("font-size", "14px");
+
+        Span registrosSpan = new Span("Alimentos: " + consumo.getTotalRegistros());
+        registrosSpan.getStyle().set("font-size", "12px").set("color", "#666");
+
+        Span caloriasSpan = new Span(String.format("%.1f kcal", consumo.getCalorias()));
+        caloriasSpan.getStyle().set("font-size", "16px").set("font-weight", "bold").set("color", "#FF6B6B");
+
+        card.add(tituloSpan, registrosSpan, caloriasSpan);
+        return card;
     }
 
     private VerticalLayout createBreakfastCard() {
