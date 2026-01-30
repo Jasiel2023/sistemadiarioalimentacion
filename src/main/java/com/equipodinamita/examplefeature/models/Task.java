@@ -1,29 +1,35 @@
-package com.equipodinamita.examplefeature;
+package com.equipodinamita.examplefeature.models;
 
-import jakarta.persistence.*;
-import org.jspecify.annotations.Nullable;
-
-import java.time.Instant;
+import java.time.Instant;//Mapea tabla en la bassse de datos
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "task")
+import org.jspecify.annotations.Nullable;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
+@Entity //Indica que esta clase se podra guardar en la base de datos
+@Table(name = "task") //Define el nombre de la tabla
 public class Task {
 
     public static final int DESCRIPTION_MAX_LENGTH = 300;
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    @Column(name = "task_id")
+    @Id // Clave primaria
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)//Generacion de ID automaticamente en la BD
+    @Column(name = "task_id")//Nombre explicito de la columna
     private Long id;
 
-    @Column(name = "description", nullable = false, length = DESCRIPTION_MAX_LENGTH)
+    @Column(name = "description", nullable = false, length = DESCRIPTION_MAX_LENGTH)//Descripcion
     private String description = "";
 
-    @Column(name = "creation_date", nullable = false)
+    @Column(name = "creation_date", nullable = false)//Fecha de creacion
     private Instant creationDate;
 
-    @Column(name = "due_date")
+    @Column(name = "due_date")//Fecha y hora actual Actual
     @Nullable
     private LocalDate dueDate;
 
