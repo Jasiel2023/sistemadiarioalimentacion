@@ -186,8 +186,7 @@ public class RegistroConsumoListView extends VerticalLayout {
                 createStatCard("🔥 Calorías", String.format("%.1f kcal", totalDiario.getCalorias()), "#FF6B6B"),
                 createStatCard("🥩 Proteínas", String.format("%.1f g", totalDiario.getProteinas()), "#4ECDC4"),
                 createStatCard("🍞 Carbohidratos", String.format("%.1f g", totalDiario.getCarbohidratos()), "#FFE66D"),
-                createStatCard("🧈 Grasas", String.format("%.1f g", totalDiario.getGrasas()), "#95E1D3")
-        );
+                createStatCard("🧈 Grasas", String.format("%.1f g", totalDiario.getGrasas()), "#95E1D3"));
 
         Span totalAlimentos = new Span("📋 Total de alimentos registrados: " + totalDiario.getTotalRegistros());
         totalAlimentos.getStyle()
@@ -199,7 +198,8 @@ public class RegistroConsumoListView extends VerticalLayout {
         content.add(resumenSection);
 
         // === SECCIÓN: PROMEDIO POR HORARIO ===
-        Map<HorarioAlimenticioEnum, ConsumoDiario> promediosPorHorario = consumoDiarioService.calcularPromedioPorCadaHorario();
+        Map<HorarioAlimenticioEnum, ConsumoDiario> promediosPorHorario = consumoDiarioService
+                .calcularPromedioPorCadaHorario();
 
         VerticalLayout horarioSection = new VerticalLayout();
         horarioSection.setPadding(true);
@@ -226,6 +226,15 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         horarioSection.add(horariosGrid);
         content.add(horarioSection);
+
+        // === Seccion del total de calorias de un dia===
+        Span totalCaloriasDia = new Span(
+                "🔥 Total de Calorías del Día: " + String.format("%.1f kcal", totalDiario.getCalorias()));
+        totalCaloriasDia.getStyle()
+                .set("font-size", "18px")
+                .set("font-weight", "bold")
+                .set("margin", "10px 0");
+        content.add(totalCaloriasDia);
 
         // === SECCIÓN: DETALLE DE ALIMENTOS ===
         VerticalLayout detalleSection = new VerticalLayout();
@@ -262,8 +271,9 @@ public class RegistroConsumoListView extends VerticalLayout {
         gridDetalle.addColumn(r -> {
             if (r.getAlimento() != null && r.getCantidad() != null) {
                 Alimento a = r.getAlimento();
-                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
-                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0
+                        ? r.getCantidad() / a.getPorcionBase()
+                        : 0;
                 float calorias = a.getCalorias() != null ? a.getCalorias() * factor : 0;
                 return String.format("%.1f kcal", calorias);
             }
@@ -273,8 +283,9 @@ public class RegistroConsumoListView extends VerticalLayout {
         gridDetalle.addColumn(r -> {
             if (r.getAlimento() != null && r.getCantidad() != null) {
                 Alimento a = r.getAlimento();
-                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
-                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0
+                        ? r.getCantidad() / a.getPorcionBase()
+                        : 0;
                 float proteinas = a.getProteinas() != null ? a.getProteinas() * factor : 0;
                 return String.format("%.1f g", proteinas);
             }
@@ -284,8 +295,9 @@ public class RegistroConsumoListView extends VerticalLayout {
         gridDetalle.addColumn(r -> {
             if (r.getAlimento() != null && r.getCantidad() != null) {
                 Alimento a = r.getAlimento();
-                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
-                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0
+                        ? r.getCantidad() / a.getPorcionBase()
+                        : 0;
                 float carbos = a.getCarbohidratos() != null ? a.getCarbohidratos() * factor : 0;
                 return String.format("%.1f g", carbos);
             }
@@ -295,8 +307,9 @@ public class RegistroConsumoListView extends VerticalLayout {
         gridDetalle.addColumn(r -> {
             if (r.getAlimento() != null && r.getCantidad() != null) {
                 Alimento a = r.getAlimento();
-                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0 
-                        ? r.getCantidad() / a.getPorcionBase() : 0;
+                float factor = a.getPorcionBase() != null && a.getPorcionBase() > 0
+                        ? r.getCantidad() / a.getPorcionBase()
+                        : 0;
                 float grasas = a.getGrasas() != null ? a.getGrasas() * factor : 0;
                 return String.format("%.1f g", grasas);
             }
