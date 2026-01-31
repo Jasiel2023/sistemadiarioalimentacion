@@ -10,6 +10,7 @@ import com.equipodinamita.base.models.ConsumoDiario;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
 import com.equipodinamita.base.ui.ViewToolbar;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -105,42 +106,37 @@ public class RegistroConsumoListView extends VerticalLayout {
         container.setAlignItems(FlexComponent.Alignment.CENTER);
         container.getStyle().set("margin-top", "auto").set("padding", "20px");
 
-        // Contenedor para los botones desplegables
-        HorizontalLayout botonesOpciones = new HorizontalLayout();
-        botonesOpciones.setSpacing(true);
-        botonesOpciones.setVisible(false);
-
-        Button btnDiario = new Button("Diario", new Icon(VaadinIcon.CALENDAR), e -> {
+        Button btnDiario = new Button("Resumen de Hoy", new Icon(VaadinIcon.SUN_DOWN), e -> {
             openConsumoDiarioDialog();
         });
+        btnDiario.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnDiario.getStyle()
                 .set("background-color", "#4CAF50")
-                .set("color", "#ffffff")
-                .set("border-radius", "8px");
-
-        Button btnSemanal = new Button("Semanal", new Icon(VaadinIcon.CALENDAR_CLOCK), e -> {
-            Notification.show("Vista Semanal", 2000, Notification.Position.BOTTOM_CENTER);
-            // Aquí puedes agregar la lógica para mostrar consumo semanal
-        });
-        btnSemanal.getStyle()
-                .set("background-color", "#2196F3")
-                .set("color", "#ffffff")
-                .set("border-radius", "8px");
-
-        botonesOpciones.add(btnDiario, btnSemanal);
-
-        // Botón principal "Ver Consumo"
-        Button btnVerConsumo = new Button("Ver Consumo", new Icon(VaadinIcon.CHART), e -> {
-            botonesOpciones.setVisible(!botonesOpciones.isVisible());
-        });
-        btnVerConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        btnVerConsumo.getStyle()
-                .set("background-color", "#6a419d")
                 .set("color", "#ffffff")
                 .set("border-radius", "8px")
                 .set("padding", "10px 20px");
 
-        container.add(btnVerConsumo, botonesOpciones);
+        Button btnCalendario = new Button("Calendario", new Icon(VaadinIcon.CALENDAR), e -> {
+            UI.getCurrent().navigate("calendario-registro");
+        });
+        btnCalendario.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnCalendario.getStyle()
+                .set("background-color", "#2196F3")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px")
+                .set("padding", "10px 20px");
+
+        Button btnAlimentos = new Button("Lista de Alimentos", new Icon(VaadinIcon.LIST), e -> {
+            UI.getCurrent().navigate("alimentos_usuario");
+        });
+        btnAlimentos.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnAlimentos.getStyle()
+                .set("background-color", "#e00fe3")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px")
+                .set("padding", "10px 20px");
+
+        container.add(btnDiario, btnCalendario, btnAlimentos);
         return container;
     }
 
