@@ -77,48 +77,7 @@ public final class MainLayout extends AppLayout implements AfterNavigationObserv
         return header;
     }
 
-    /*private SideNav createSideNav() {
-        var nav = new SideNav();
-        nav.addClassNames(LumoUtility.Margin.Horizontal.MEDIUM);
-
-        Cuenta cuenta = VaadinSession.getCurrent().getAttribute(Cuenta.class);
-        
-        // --- DEBUG: MIRA ESTO EN LA CONSOLA DE TU IDE ---
-        System.out.println("--- DEBUG MENU ---");
-        if (cuenta == null) {
-            System.out.println("ERROR: La cuenta es NULL. La sesión no se guardó.");
-        } else {
-            System.out.println("Usuario logueado: " + cuenta.getEmail());
-            if (cuenta.getPersona() == null) {
-                 System.out.println("ERROR: La cuenta tiene PERSONA NULL.");
-            } else {
-                 System.out.println("Rol detectado: " + cuenta.getPersona().getRol());
-            }
-        }
-        if (cuenta == null || cuenta.getPersona() == null) {
-            return nav;
-        }
-
-        RolEnum rol = cuenta.getPersona().getRol();
-        if (rol == RolEnum.ADMIN) {
-            nav.addItem(new SideNavItem("Gestion Alimentos", "alimentos", new Icon(VaadinIcon.DATABASE)));
-           
-        } else if (rol == RolEnum.CLIENTE) {
-            nav.addItem(new SideNavItem("Registro de Consumo", "registro-consumo", new Icon(VaadinIcon.CHART)));
-            nav.addItem(new SideNavItem("Alimentos_usuario", "alimentos_usuario", new Icon(VaadinIcon.LIST)));
-
-        }
-        MenuConfiguration.getMenuEntries().forEach(entry -> nav.addItem(createSideNavItem(entry)));
-        return nav;
-    }
-
-    private SideNavItem createSideNavItem(MenuEntry menuEntry) {
-        if (menuEntry.icon() != null) {
-            return new SideNavItem(menuEntry.title(), menuEntry.path(), new Icon(menuEntry.icon()));
-        } else {
-            return new SideNavItem(menuEntry.title(), menuEntry.path());
-        }
-    }*/
+    
 
     private Component createFooter(){
 
