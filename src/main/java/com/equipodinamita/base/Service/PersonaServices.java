@@ -1,10 +1,11 @@
-package com.equipodinamita.controller.services;
+package com.equipodinamita.base.Service;
+
 
 import org.springframework.stereotype.Service;
 
 import com.equipodinamita.base.models.Persona;
 
-import com.equipodinamita.controller.Repository.PersonaRepository;
+import com.equipodinamita.base.Repository.PersonaRepository;
 
 
 @Service

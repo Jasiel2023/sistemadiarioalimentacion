@@ -1,4 +1,4 @@
-package com.equipodinamita.controller.Repository;
+package com.equipodinamita.base.Repository;
 
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;

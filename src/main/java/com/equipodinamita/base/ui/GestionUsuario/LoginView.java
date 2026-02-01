@@ -5,7 +5,7 @@ import com.equipodinamita.base.models.Cuenta;
 
 import com.equipodinamita.base.models.Persona;
 import com.equipodinamita.base.models.RolEnum;
-import com.equipodinamita.controller.services.CuentaServices;
+import com.equipodinamita.base.Service.CuentaServices;
 import com.vaadin.copilot.shaded.checkerframework.checker.units.qual.N;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.UI;
