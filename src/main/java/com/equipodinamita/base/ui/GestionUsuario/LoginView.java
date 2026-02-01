@@ -1,4 +1,5 @@
-package com.equipodinamita.examplefeature.ui;
+package com.equipodinamita.base.ui.GestionUsuario;
+
 
 import com.equipodinamita.base.models.Cuenta;
 
@@ -61,3 +62,4 @@ public class LoginView extends Composite<LoginOverlay> {
 
 }
 }
+

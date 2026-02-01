@@ -1,4 +1,5 @@
-package com.equipodinamita.examplefeature.ui;
+package com.equipodinamita.base.ui.GestionUsuario;
+
 
 import java.sql.Date;
 
