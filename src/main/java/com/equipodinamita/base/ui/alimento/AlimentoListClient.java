@@ -11,9 +11,11 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
-@Route("alimentos_usuario")
+import com.equipodinamita.base.ui.MainLayout;
+@Route(value = "alimentos_usuario", layout = MainLayout.class)
 @PageTitle("Alimentos_usuario")
-@Menu(order = 1, icon = "vaadin:list", title = "Alimentos")
+//@Menu(order = 1, icon = "vaadin:list", title = "Alimentos")
+
 class AlimentoListClient extends VerticalLayout {
 
     private final AlimentoService alimentoService;

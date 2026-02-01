@@ -25,7 +25,7 @@ public class LoginView extends Composite<LoginOverlay> {
         loginOverlay.setTitle("DataAliment");
         loginOverlay.setDescription("Inicia sesión con tu correo electrónico y contraseña");
         loginOverlay.setOpened(true);
-        Persona persona = null;
+       // Persona persona = new Persona();
 
 
         loginOverlay.addLoginListener( event -> {
@@ -46,12 +46,13 @@ public class LoginView extends Composite<LoginOverlay> {
             VaadinSession.getCurrent().setAttribute(Cuenta.class, cuenta);
             Notification.show("Login successful");
             loginOverlay.close();
-            RolEnum rolDelUsuario = persona.getRol();
-            if (rolDelUsuario == RolEnum.ADMIN) {
-                UI.getCurrent().navigate("");
+            Persona persona = cuenta.getPersona();
+          
+            if (persona.getRol() == RolEnum.ADMIN) {
+                UI.getCurrent().navigate("alimentos");
                 Notification.show("Bienvenido Administrador");
-            } else if (rolDelUsuario == RolEnum.CLIENTE) {
-                 UI.getCurrent().navigate("");
+            } else if (persona.getRol() == RolEnum.CLIENTE) {
+                 UI.getCurrent().navigate("registro-consumo");
                 Notification.show("Bienvenido Cliente");
             }
            

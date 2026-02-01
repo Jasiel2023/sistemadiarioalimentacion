@@ -31,7 +31,7 @@ import com.vaadin.flow.server.auth.AnonymousAllowed;
 
 @Route("registro")
 @PageTitle("Crear Cuenta")
-@Menu(order = 1, icon = "vaadin:list", title = "Registro")
+//@Menu(order = 1, icon = "vaadin:list", title = "Registro")
 @AnonymousAllowed
 public class RegistroView extends VerticalLayout {
 

@@ -11,4 +11,5 @@ public interface CuentaRepository extends JpaRepository<Cuenta, Integer> {
     
 
     boolean existsByEmail(String email);
+
 }

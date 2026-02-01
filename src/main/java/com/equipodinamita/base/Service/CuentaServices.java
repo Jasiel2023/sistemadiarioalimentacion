@@ -66,9 +66,11 @@ public class CuentaServices {
    
         nuevaCuenta.setEstado(true);
          System.out.println("Email: " + nuevaCuenta.getEmail());
-    System.out.println("Estado antes de guardar: " + nuevaCuenta.getEstado());
+         System.out.println("Estado despues de guardar: " + nuevaCuenta.getEstado());
         cuentaRepository.save(nuevaCuenta);
 
         return true;
     }
+
+
 }
