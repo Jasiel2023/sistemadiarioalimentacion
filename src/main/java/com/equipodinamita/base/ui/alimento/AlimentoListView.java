@@ -4,6 +4,7 @@ import com.equipodinamita.base.Service.AlimentoService;
 import com.equipodinamita.base.models.Alimento;
 import com.equipodinamita.base.models.CategoriaEnum;
 import com.equipodinamita.base.models.UnidadEnum;
+import com.equipodinamita.base.ui.MainLayout;
 import com.equipodinamita.base.ui.ViewToolbar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -17,14 +18,13 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.dom.Style;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
-@Route("alimentos")
+@Route(value = "alimentos", layout = MainLayout.class)
 @PageTitle("Alimentos")
 
-@Menu(order = 0, icon = "vaadin:clipboard-check", title = "Alimento List Admin")
+//@Menu(order = 0, icon = "vaadin:clipboard-check", title = "Alimento List Admin")
 class AlimentoListView extends VerticalLayout {
 
     private final AlimentoService alimentoService;
@@ -107,35 +107,37 @@ class AlimentoListView extends VerticalLayout {
     categoria.setRequired(true);
 
     Button saveBtn = new Button("Guardar", e -> {
-        if (nombre.isEmpty()
-        || unidadMedida.getValue() == null
-        || categoria.getValue() == null) {
-
+    if (!validarFormulario(nombre, calorias, proteinas, carbohidratos, grasas, porcionBase, unidadMedida, categoria)) {
         Notification.show(
-            "Nombre, unidad y categoría son obligatorios",
-            3000,
-            Notification.Position.MIDDLE
+                "Por favor completa los campos marcados en rojo",
+                3000,
+                Notification.Position.MIDDLE
         ).addThemeVariants(NotificationVariant.LUMO_ERROR);
-
         return;
     }
+        try {
         alimentoService.createAlimento(
-            nombre.getValue(),
-            toFloat(calorias.getValue()),
-            toFloat(proteinas.getValue()),
-            toFloat(carbohidratos.getValue()),
-            toFloat(grasas.getValue()),
-            toFloat(porcionBase.getValue()),
-            unidadMedida.getValue(),
-            categoria.getValue()
+                nombre.getValue(),
+                toFloat(calorias.getValue()),
+                toFloat(proteinas.getValue()),
+                toFloat(carbohidratos.getValue()),
+                toFloat(grasas.getValue()),
+                toFloat(porcionBase.getValue()),
+                unidadMedida.getValue(),
+                categoria.getValue()
         );
 
         alimentoGrid.getDataProvider().refreshAll();
         dialog.close();
 
-        Notification.show("Alimento creado", 3000,
+        Notification.show("Alimento creado correctamente", 3000,
                 Notification.Position.BOTTOM_END)
                 .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+
+    } catch (IllegalArgumentException ex) {
+        Notification.show(ex.getMessage(), 4000, Notification.Position.MIDDLE)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+    }
     });
 
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -249,6 +251,87 @@ class AlimentoListView extends VerticalLayout {
 
     dialog.getFooter().add(cancelBtn, saveBtn);
     dialog.open();
+}
+
+private boolean validarFormulario(
+        TextField nombre,
+        NumberField calorias,
+        NumberField proteinas,
+        NumberField carbohidratos,
+        NumberField grasas,
+        NumberField porcionBase,
+        ComboBox<UnidadEnum> unidadMedida,
+        ComboBox<CategoriaEnum> categoria
+) {
+    boolean valido = true;
+
+    // Resetear estados de error
+    nombre.setInvalid(false);
+    calorias.setInvalid(false);
+    proteinas.setInvalid(false);
+    carbohidratos.setInvalid(false);
+    grasas.setInvalid(false);
+    porcionBase.setInvalid(false);
+    unidadMedida.setInvalid(false);
+    categoria.setInvalid(false);
+
+    // Nombre
+    if (nombre.isEmpty()) {
+        nombre.setErrorMessage("El nombre es obligatorio");
+        nombre.setInvalid(true);
+        valido = false;
+    }
+
+    // Calorías
+    if (calorias.getValue() == null) {
+        calorias.setErrorMessage("Las calorías son obligatorias");
+        calorias.setInvalid(true);
+        valido = false;
+    }
+
+    // Proteínas
+    if (proteinas.getValue() == null) {
+        proteinas.setErrorMessage("Las proteínas son obligatorias");
+        proteinas.setInvalid(true);
+        valido = false;
+    }
+
+    // Carbohidratos
+    if (carbohidratos.getValue() == null) {
+        carbohidratos.setErrorMessage("Los carbohidratos son obligatorios");
+        carbohidratos.setInvalid(true);
+        valido = false;
+    }
+
+    // Grasas
+    if (grasas.getValue() == null) {
+        grasas.setErrorMessage("Las grasas son obligatorias");
+        grasas.setInvalid(true);
+        valido = false;
+    }
+
+    // Porción base
+    if (porcionBase.getValue() == null || porcionBase.getValue() <= 0) {
+        porcionBase.setErrorMessage("La porción base es obligatoria y debe ser mayor a 0");
+        porcionBase.setInvalid(true);
+        valido = false;
+    }
+
+    // Unidad
+    if (unidadMedida.getValue() == null) {
+        unidadMedida.setErrorMessage("Seleccione una unidad de medida");
+        unidadMedida.setInvalid(true);
+        valido = false;
+    }
+
+    // Categoría
+    if (categoria.getValue() == null) {
+        categoria.setErrorMessage("Seleccione una categoría");
+        categoria.setInvalid(true);
+        valido = false;
+    }
+
+    return valido;
 }
 
 }
