@@ -1,5 +1,9 @@
 package com.equipodinamita.base.ui.registro_consumo;
 
+import java.time.LocalDate;
+import java.time.format.TextStyle;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.equipodinamita.base.Service.AlimentoService;
@@ -7,12 +11,15 @@ import com.equipodinamita.base.Service.ConsumoDiarioService;
 import com.equipodinamita.base.Service.RegistroConsumoService;
 import com.equipodinamita.base.models.Alimento;
 import com.equipodinamita.base.models.ConsumoDiario;
+import com.equipodinamita.base.models.Cuenta;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
 import com.equipodinamita.base.ui.ViewToolbar;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
@@ -26,16 +33,20 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
-import com.vaadin.flow.dom.Style;
-import com.vaadin.flow.router.Menu;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
 
 @Route("registro-consumo")
 @PageTitle("Registro de Consumo")
-//@Menu(order = 1, icon = "vaadin:clipboard-text", title = "Registro de Consumo")
-public class RegistroConsumoListView extends VerticalLayout {
+// @Menu(order = 1, icon = "vaadin:clipboard-text", title = "Registro de
+// Consumo")
+public class RegistroConsumoListView extends VerticalLayout implements BeforeEnterObserver {
+
+    private static final Locale LOCALE_ES = new Locale("es", "ES");
 
     private final RegistroConsumoService registroService;
     private final AlimentoService alimentoService;
@@ -47,6 +58,167 @@ public class RegistroConsumoListView extends VerticalLayout {
     private VerticalLayout itemsContainerAlmuerzo;
     private VerticalLayout itemsContainerCena;
     private VerticalLayout itemsContainerEntretiempo;
+
+    // Fecha seleccionada para el registro (null = hoy)
+    private LocalDate fechaSeleccionada;
+    private Span tituloFechaSpan;
+
+    // ConsumoDiario actual para la fecha seleccionada
+    private ConsumoDiario consumoDiarioActual;
+
+    // Método helper para obtener la cuenta del usuario actual
+    private Cuenta getCuentaActual() {
+        return VaadinSession.getCurrent().getAttribute(Cuenta.class);
+    }
+
+    // Método helper para obtener la fecha actual (seleccionada o hoy)
+    private LocalDate getFechaActual() {
+        return fechaSeleccionada != null ? fechaSeleccionada : LocalDate.now();
+    }
+
+    // Método helper para obtener o crear el ConsumoDiario de la fecha actual
+    // IMPORTANTE: Siempre obtiene el ConsumoDiario basándose en la fecha actual,
+    // sin usar cache para evitar datos obsoletos al cambiar de fecha
+    private ConsumoDiario getConsumoDiarioActual() {
+        Cuenta cuenta = getCuentaActual();
+        if (cuenta != null) {
+            LocalDate fecha = getFechaActual();
+            // Siempre obtener/crear el ConsumoDiario para la fecha correcta
+            consumoDiarioActual = consumoDiarioService.obtenerOCrearConsumoDiario(cuenta, fecha);
+        }
+        return consumoDiarioActual;
+    }
+
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        // Obtener el parámetro de fecha de la URL
+        List<String> fechaParams = event.getLocation().getQueryParameters().getParameters().get("fecha");
+
+        // Resetear el consumoDiario cuando se navega
+        consumoDiarioActual = null;
+
+        if (fechaParams != null && !fechaParams.isEmpty()) {
+            try {
+                fechaSeleccionada = LocalDate.parse(fechaParams.get(0));
+            } catch (Exception e) {
+                fechaSeleccionada = null; // Si hay error, usar fecha de hoy
+            }
+        } else {
+            fechaSeleccionada = null; // Sin parámetro = hoy
+        }
+
+        // Actualizar título y cargar registros
+        actualizarTituloFecha();
+        refrescarTodosLosRegistros();
+    }
+
+    // Método para refrescar todos los registros de todas las tarjetas
+    private void refrescarTodosLosRegistros() {
+        if (itemsContainer != null) {
+            refreshBreakfastItems();
+        }
+        if (itemsContainerAlmuerzo != null) {
+            refreshAlmuerzoItems();
+        }
+        if (itemsContainerCena != null) {
+            refreshCenaItems();
+        }
+        if (itemsContainerEntretiempo != null) {
+            refreshEntretiempoItems();
+        }
+    }
+
+    /**
+     * Valida si el consumo del día actual requiere ser guardado antes de navegar al
+     * calendario.
+     * Solo muestra el diálogo si hay alimentos registrados sin guardar.
+     */
+    private void validarYNavegarACalendario() {
+        Cuenta cuenta = getCuentaActual();
+        if (cuenta == null) {
+            Notification.show("Error: No hay usuario autenticado", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+
+        // Obtener el ConsumoDiario actual y verificar directamente si tiene registros
+        // sin guardar
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
+
+        // Verificar si hay registros en cualquier horario
+        boolean tieneRegistros = false;
+        if (consumoDiario != null) {
+            tieneRegistros = !registroService
+                    .findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.DESAYUNO).isEmpty() ||
+                    !registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.ALMUERZO)
+                            .isEmpty()
+                    ||
+                    !registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.CENA).isEmpty()
+                    ||
+                    !registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.ENTRETIEMPOS)
+                            .isEmpty();
+        }
+
+        boolean yaGuardado = consumoDiario != null && consumoDiario.isGuardado();
+        boolean requiereGuardar = tieneRegistros && !yaGuardado;
+
+        if (requiereGuardar) {
+            // Mostrar diálogo obligatorio
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("⚠️ Debes guardar tu consumo primero");
+
+            LocalDate fechaActual = getFechaActual();
+            String fechaTexto = fechaActual.equals(LocalDate.now()) ? "de hoy"
+                    : "del " + fechaActual.getDayOfMonth() + " de " +
+                            fechaActual.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES);
+
+            dialog.setText("Tienes alimentos registrados " + fechaTexto + " que aún no has guardado. " +
+                    "¿Qué deseas hacer?");
+
+            dialog.setConfirmText("Guardar Consumo");
+            dialog.setConfirmButtonTheme("primary success");
+            dialog.addConfirmListener(event -> {
+                // Guardar el consumo automáticamente
+                LocalDate fecha = getFechaActual();
+                consumoDiarioService.guardarConsumoDiario(cuenta, fecha);
+                Notification.show("✅ Consumo guardado correctamente", 3000, Notification.Position.BOTTOM_CENTER);
+                // Navegar al calendario después de guardar
+                UI.getCurrent().navigate("calendario-registro");
+            });
+
+            // Botón de "No guardar" - descarta cambios y navega al calendario
+            dialog.setRejectable(true);
+            dialog.setRejectText("No guardar");
+            dialog.addRejectListener(event -> {
+                // Navegar al calendario sin guardar
+                UI.getCurrent().navigate("calendario-registro");
+            });
+
+            // Botón de cancelar para cerrar el diálogo y quedarse
+            dialog.setCancelable(true);
+            dialog.setCancelText("Cancelar");
+            dialog.setCloseOnEsc(true);
+
+            dialog.open();
+        } else {
+            // No hay registros pendientes de guardar, permitir navegar
+            UI.getCurrent().navigate("calendario-registro");
+        }
+    }
+
+    private void actualizarTituloFecha() {
+        if (tituloFechaSpan != null && fechaSeleccionada != null) {
+            String nombreDia = fechaSeleccionada.getDayOfWeek().getDisplayName(TextStyle.FULL, LOCALE_ES);
+            String nombreMes = fechaSeleccionada.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES);
+            tituloFechaSpan.setText(String.format("📅 %s, %d de %s de %d",
+                    nombreDia.substring(0, 1).toUpperCase() + nombreDia.substring(1),
+                    fechaSeleccionada.getDayOfMonth(),
+                    nombreMes,
+                    fechaSeleccionada.getYear()));
+            tituloFechaSpan.setVisible(true);
+        } else if (tituloFechaSpan != null) {
+            tituloFechaSpan.setVisible(false);
+        }
+    }
 
     public RegistroConsumoListView(
             RegistroConsumoService registroService,
@@ -61,12 +233,12 @@ public class RegistroConsumoListView extends VerticalLayout {
         crearBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         grid = new Grid<>();
-        grid.setItems(query -> registroService.list(toSpringPageRequest(query)).stream());
+        grid.setItems(query -> registroService.list(getCuentaActual(), toSpringPageRequest(query)).stream());
 
         setSizeFull();
         setPadding(false);
         setSpacing(false);
-        getStyle().setOverflow(Style.Overflow.HIDDEN);
+        getStyle().set("overflow-y", "auto"); // Permitir scroll vertical
 
         // Contenedor vertical para organizar filas de cuadros
         VerticalLayout cardsWrapper = new VerticalLayout();
@@ -88,65 +260,142 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         cardsWrapper.add(firstRow, secondRow);
 
-        // --- BOTÓN VER CONSUMO EN LA PARTE INFERIOR ---
-        HorizontalLayout bottomButtonContainer = createVerConsumoButton();
+        // --- BOTÓN Consultar Consumo en la parte inferior ---
+        HorizontalLayout bottomButtonContainer = new HorizontalLayout();
+        bottomButtonContainer.setWidthFull();
+        bottomButtonContainer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        bottomButtonContainer.setAlignItems(FlexComponent.Alignment.CENTER);
+        bottomButtonContainer.getStyle().set("margin-top", "auto").set("padding", "20px");
 
-        add(
-                new ViewToolbar(
-                        "Registro de Consumo"),
-                cardsWrapper,
-                bottomButtonContainer);
-    }
-
-    private HorizontalLayout createVerConsumoButton() {
-        HorizontalLayout container = new HorizontalLayout();
-        container.setWidthFull();
-        container.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-        container.setAlignItems(FlexComponent.Alignment.CENTER);
-        container.getStyle().set("margin-top", "auto").set("padding", "20px");
-
-        // Contenedor para los botones desplegables
+        // Contenedor de los tres botones (inicialmente oculto)
         HorizontalLayout botonesOpciones = new HorizontalLayout();
+        botonesOpciones.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        botonesOpciones.setAlignItems(FlexComponent.Alignment.CENTER);
         botonesOpciones.setSpacing(true);
-        botonesOpciones.setVisible(false);
+        botonesOpciones.setVisible(false); // Oculto inicialmente
 
-        Button btnDiario = new Button("Diario", new Icon(VaadinIcon.CALENDAR), e -> {
+        Button btnDiario = new Button("Resumen de Hoy", new Icon(VaadinIcon.SUN_DOWN), e -> {
             openConsumoDiarioDialog();
         });
+        btnDiario.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         btnDiario.getStyle()
                 .set("background-color", "#4CAF50")
-                .set("color", "#ffffff")
-                .set("border-radius", "8px");
-
-        Button btnSemanal = new Button("Semanal", new Icon(VaadinIcon.CALENDAR_CLOCK), e -> {
-            Notification.show("Vista Semanal", 2000, Notification.Position.BOTTOM_CENTER);
-            // Aquí puedes agregar la lógica para mostrar consumo semanal
-        });
-        btnSemanal.getStyle()
-                .set("background-color", "#2196F3")
-                .set("color", "#ffffff")
-                .set("border-radius", "8px");
-
-        botonesOpciones.add(btnDiario, btnSemanal);
-
-        // Botón principal "Ver Consumo"
-        Button btnVerConsumo = new Button("Ver Consumo", new Icon(VaadinIcon.CHART), e -> {
-            botonesOpciones.setVisible(!botonesOpciones.isVisible());
-        });
-        btnVerConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        btnVerConsumo.getStyle()
-                .set("background-color", "#6a419d")
                 .set("color", "#ffffff")
                 .set("border-radius", "8px")
                 .set("padding", "10px 20px");
 
-        container.add(btnVerConsumo, botonesOpciones);
-        return container;
+        Button btnCalendario = new Button("Calendario", new Icon(VaadinIcon.CALENDAR), e -> {
+            validarYNavegarACalendario();
+        });
+        btnCalendario.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnCalendario.getStyle()
+                .set("background-color", "#2196F3")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px")
+                .set("padding", "10px 20px");
+
+        Button btnAlimentos = new Button("Lista de Alimentos", new Icon(VaadinIcon.LIST), e -> {
+            UI.getCurrent().navigate("alimentos_usuario");
+        });
+        btnAlimentos.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnAlimentos.getStyle()
+                .set("background-color", "#e00fe3")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px")
+                .set("padding", "10px 20px");
+
+        botonesOpciones.add(btnDiario, btnCalendario, btnAlimentos);
+
+        // Botón principal "Consultar Consumo"
+        Button btnConsultarConsumo = new Button("Consultar Consumo", new Icon(VaadinIcon.SEARCH), e -> {
+            botonesOpciones.setVisible(!botonesOpciones.isVisible());
+        });
+        btnConsultarConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        btnConsultarConsumo.getStyle()
+                .set("background-color", "#6a419d")
+                .set("color", "#ffffff")
+                .set("border-radius", "8px")
+                .set("padding", "12px 24px")
+                .set("font-size", "16px");
+
+        VerticalLayout buttonSection = new VerticalLayout();
+        buttonSection.setWidthFull();
+        buttonSection.setAlignItems(FlexComponent.Alignment.CENTER);
+        buttonSection.setSpacing(true);
+        buttonSection.add(btnConsultarConsumo, botonesOpciones);
+
+        bottomButtonContainer.add(buttonSection);
+
+        // Span para mostrar la fecha seleccionada (si es diferente a hoy)
+        tituloFechaSpan = new Span();
+        tituloFechaSpan.getStyle()
+                .set("font-size", "16px")
+                .set("font-weight", "bold")
+                .set("color", "#6a419d")
+                .set("background-color", "#f0e6ff")
+                .set("padding", "8px 16px")
+                .set("border-radius", "8px");
+        tituloFechaSpan.setVisible(false); // Inicialmente oculto, se muestra si hay fecha seleccionada
+
+        // Botón "Guardar Consumo" para la barra superior
+        Button btnGuardarConsumo = new Button("Guardar Consumo", new Icon(VaadinIcon.CHECK), e -> {
+            guardarConsumoDiario();
+        });
+        btnGuardarConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
+        btnGuardarConsumo.getStyle()
+                .set("background-color", "#4CAF50")
+                .set("color", "#ffffff");
+
+        // Contenedor para la fecha seleccionada debajo del toolbar
+        HorizontalLayout fechaContainer = new HorizontalLayout(tituloFechaSpan);
+        fechaContainer.setWidthFull();
+        fechaContainer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+        fechaContainer.setPadding(true);
+        fechaContainer.setVisible(false); // Se mostrará cuando haya fecha seleccionada
+
+        // Actualizar visibilidad del contenedor cuando cambie la fecha
+        tituloFechaSpan.addAttachListener(e -> {
+            fechaContainer.setVisible(tituloFechaSpan.isVisible());
+        });
+
+        add(
+                new ViewToolbar("Registro de Consumo", btnGuardarConsumo),
+                fechaContainer,
+                cardsWrapper,
+                bottomButtonContainer);
+    }
+
+    /**
+     * Guarda el consumo diario del usuario actual para la fecha seleccionada
+     */
+    private void guardarConsumoDiario() {
+        Cuenta cuentaActual = getCuentaActual();
+
+        if (cuentaActual == null) {
+            Notification.show("Error: No hay usuario autenticado", 3000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        try {
+            // Usar la fecha actual (seleccionada o hoy)
+            consumoDiarioService.guardarConsumoDiario(cuentaActual, getFechaActual());
+            Notification.show("✅ Consumo diario guardado correctamente", 3000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+        } catch (Exception ex) {
+            Notification.show("❌ Error al guardar: " + ex.getMessage(), 5000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
     }
 
     private void openConsumoDiarioDialog() {
         Dialog dialog = new Dialog();
-        dialog.setHeaderTitle("📊 Resumen de Consumo Diario");
+
+        // Título dinámico según la fecha
+        LocalDate fecha = getFechaActual();
+        String tituloFecha = fecha.equals(LocalDate.now()) ? "de Hoy"
+                : "del " + fecha.getDayOfMonth() + " de " + fecha.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES);
+        dialog.setHeaderTitle("📊 Resumen de Consumo " + tituloFecha);
         dialog.setWidth("900px");
         dialog.setHeight("700px");
         dialog.setCloseOnEsc(true);
@@ -157,12 +406,20 @@ public class RegistroConsumoListView extends VerticalLayout {
         content.setSpacing(true);
         content.getStyle().set("overflow-y", "auto");
 
-        // Obtener el total de consumo diario
-        ConsumoDiario totalDiario = consumoDiarioService.calcularTotalConsumoDiario();
+        // Obtener el ConsumoDiario de la fecha actual (seleccionada o hoy)
+        ConsumoDiario consumoDiarioActual = getConsumoDiarioActual();
+
+        // Calcular totales SOLO de los registros de esa fecha
+        ConsumoDiario totalDiario = consumoDiarioService.calcularTotalConsumoDiarioPorFecha(consumoDiarioActual);
 
         if (totalDiario.getTotalRegistros() == 0) {
-            content.add(new H3("⚠️ No hay registros de consumo para hoy"));
+            content.add(new H3("⚠️ No hay registros de consumo para " + tituloFecha.toLowerCase()));
+
+            Button cerrarBtn = new Button("Cerrar", e -> dialog.close());
+            cerrarBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
             dialog.add(content);
+            dialog.getFooter().add(cerrarBtn);
             dialog.open();
             return;
         }
@@ -175,7 +432,7 @@ public class RegistroConsumoListView extends VerticalLayout {
                 .set("border-radius", "12px")
                 .set("margin-bottom", "20px");
 
-        H3 tituloResumen = new H3("🍽️ Resumen Total del Día");
+        H3 tituloResumen = new H3("🍽️ Resumen Total " + tituloFecha);
         tituloResumen.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
 
         HorizontalLayout statsLayout = new HorizontalLayout();
@@ -197,9 +454,9 @@ public class RegistroConsumoListView extends VerticalLayout {
         resumenSection.add(tituloResumen, statsLayout, totalAlimentos);
         content.add(resumenSection);
 
-        // === SECCIÓN: PROMEDIO POR HORARIO ===
-        Map<HorarioAlimenticioEnum, ConsumoDiario> promediosPorHorario = consumoDiarioService
-                .calcularPromedioPorCadaHorario();
+        // === SECCIÓN: CONSUMO POR HORARIO (de la fecha actual) ===
+        Map<HorarioAlimenticioEnum, ConsumoDiario> consumoPorHorario = consumoDiarioService
+                .calcularConsumoPorCadaHorarioYFecha(consumoDiarioActual);
 
         VerticalLayout horarioSection = new VerticalLayout();
         horarioSection.setPadding(true);
@@ -208,7 +465,7 @@ public class RegistroConsumoListView extends VerticalLayout {
                 .set("border-radius", "12px")
                 .set("margin-bottom", "20px");
 
-        H3 tituloHorarios = new H3("⏰ Consumo por Tipo de Comida");
+        H3 tituloHorarios = new H3("⏰ Consumo por Tipo de Comida " + tituloFecha);
         tituloHorarios.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
         horarioSection.add(tituloHorarios);
 
@@ -218,7 +475,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         horariosGrid.getStyle().set("flex-wrap", "wrap");
 
         for (HorarioAlimenticioEnum horario : HorarioAlimenticioEnum.values()) {
-            ConsumoDiario consumoHorario = promediosPorHorario.get(horario);
+            ConsumoDiario consumoHorario = consumoPorHorario.get(horario);
             if (consumoHorario != null && consumoHorario.getTotalRegistros() > 0) {
                 horariosGrid.add(createHorarioCard(horario, consumoHorario));
             }
@@ -229,7 +486,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         // === Seccion del total de calorias de un dia===
         Span totalCaloriasDia = new Span(
-                "🔥 Total de Calorías del Día: " + String.format("%.1f kcal", totalDiario.getCalorias()));
+                "🔥 Total de Calorías " + tituloFecha + ": " + String.format("%.1f kcal", totalDiario.getCalorias()));
         totalCaloriasDia.getStyle()
                 .set("font-size", "18px")
                 .set("font-weight", "bold")
@@ -474,68 +731,78 @@ public class RegistroConsumoListView extends VerticalLayout {
     // --- REFRESH ITEMS ---
     private void refreshBreakfastItems() {
         itemsContainer.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.DESAYUNO,
-                org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
-                    if (registro.getAlimento() != null) {
-                        String nombreAlimento = registro.getAlimento().getNombre();
-                        String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
-                        String unidad = registro.getAlimento().getUnidadMedida() != null
-                                ? registro.getAlimento().getUnidadMedida().name()
-                                : "";
-                        String macros = "Cantidad: " + cantidad + " " + unidad;
-                        itemsContainer.add(createFoodRow(nombreAlimento, macros));
-                    }
-                });
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
+        if (consumoDiario != null) {
+            registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.DESAYUNO)
+                    .forEach(registro -> {
+                        if (registro.getAlimento() != null) {
+                            String nombreAlimento = registro.getAlimento().getNombre();
+                            String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
+                            String unidad = registro.getAlimento().getUnidadMedida() != null
+                                    ? registro.getAlimento().getUnidadMedida().name()
+                                    : "";
+                            String macros = "Cantidad: " + cantidad + " " + unidad;
+                            itemsContainer.add(createFoodRow(nombreAlimento, macros));
+                        }
+                    });
+        }
     }
 
     private void refreshAlmuerzoItems() {
         itemsContainerAlmuerzo.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.ALMUERZO,
-                org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
-                    if (registro.getAlimento() != null) {
-                        String nombreAlimento = registro.getAlimento().getNombre();
-                        String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
-                        String unidad = registro.getAlimento().getUnidadMedida() != null
-                                ? registro.getAlimento().getUnidadMedida().name()
-                                : "";
-                        String macros = "Cantidad: " + cantidad + " " + unidad;
-                        itemsContainerAlmuerzo.add(createFoodRow(nombreAlimento, macros));
-                    }
-                });
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
+        if (consumoDiario != null) {
+            registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.ALMUERZO)
+                    .forEach(registro -> {
+                        if (registro.getAlimento() != null) {
+                            String nombreAlimento = registro.getAlimento().getNombre();
+                            String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
+                            String unidad = registro.getAlimento().getUnidadMedida() != null
+                                    ? registro.getAlimento().getUnidadMedida().name()
+                                    : "";
+                            String macros = "Cantidad: " + cantidad + " " + unidad;
+                            itemsContainerAlmuerzo.add(createFoodRow(nombreAlimento, macros));
+                        }
+                    });
+        }
     }
 
     private void refreshCenaItems() {
         itemsContainerCena.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA,
-                org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
-                    if (registro.getAlimento() != null) {
-                        String nombreAlimento = registro.getAlimento().getNombre();
-                        String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
-                        String unidad = registro.getAlimento().getUnidadMedida() != null
-                                ? registro.getAlimento().getUnidadMedida().name()
-                                : "";
-                        String macros = "Cantidad: " + cantidad + " " + unidad;
-                        itemsContainerCena
-                                .add(createFoodRow(nombreAlimento, macros));
-                    }
-                });
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
+        if (consumoDiario != null) {
+            registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.CENA)
+                    .forEach(registro -> {
+                        if (registro.getAlimento() != null) {
+                            String nombreAlimento = registro.getAlimento().getNombre();
+                            String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
+                            String unidad = registro.getAlimento().getUnidadMedida() != null
+                                    ? registro.getAlimento().getUnidadMedida().name()
+                                    : "";
+                            String macros = "Cantidad: " + cantidad + " " + unidad;
+                            itemsContainerCena.add(createFoodRow(nombreAlimento, macros));
+                        }
+                    });
+        }
     }
 
     private void refreshEntretiempoItems() {
         itemsContainerEntretiempo.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS,
-                org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
-                    if (registro.getAlimento() != null) {
-                        String nombreAlimento = registro.getAlimento().getNombre();
-                        String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
-                        String unidad = registro.getAlimento().getUnidadMedida() != null
-                                ? registro.getAlimento().getUnidadMedida().name()
-                                : "";
-                        String macros = "Cantidad: " + cantidad + " " + unidad;
-                        itemsContainerEntretiempo
-                                .add(createFoodRow(nombreAlimento, macros));
-                    }
-                });
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
+        if (consumoDiario != null) {
+            registroService.findByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.ENTRETIEMPOS)
+                    .forEach(registro -> {
+                        if (registro.getAlimento() != null) {
+                            String nombreAlimento = registro.getAlimento().getNombre();
+                            String cantidad = registro.getCantidad() != null ? registro.getCantidad().toString() : "0";
+                            String unidad = registro.getAlimento().getUnidadMedida() != null
+                                    ? registro.getAlimento().getUnidadMedida().name()
+                                    : "";
+                            String macros = "Cantidad: " + cantidad + " " + unidad;
+                            itemsContainerEntretiempo.add(createFoodRow(nombreAlimento, macros));
+                        }
+                    });
+        }
     }
 
     private HorizontalLayout createFoodRow(String name, String macros) {
@@ -571,10 +838,13 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.setHeight("80%");
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.DESAYUNO, toSpringPageRequest(query)).stream());
+                .listByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.DESAYUNO,
+                        toSpringPageRequest(query))
+                .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.DESAYUNO, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -617,10 +887,13 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.setHeight("80%");
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.ALMUERZO, toSpringPageRequest(query)).stream());
+                .listByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.ALMUERZO,
+                        toSpringPageRequest(query))
+                .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ALMUERZO, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -663,10 +936,12 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.setHeight("80%");
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA, toSpringPageRequest(query)).stream());
+                .listByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.CENA, toSpringPageRequest(query))
+                .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.CENA, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -709,10 +984,13 @@ public class RegistroConsumoListView extends VerticalLayout {
         dialog.setHeight("80%");
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
+        ConsumoDiario consumoDiario = getConsumoDiarioActual();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS, toSpringPageRequest(query)).stream());
+                .listByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.ENTRETIEMPOS,
+                        toSpringPageRequest(query))
+                .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ENTRETIEMPOS, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -783,10 +1061,16 @@ public class RegistroConsumoListView extends VerticalLayout {
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
                 return;
             }
+
+            // Obtener el ConsumoDiario de la fecha actual
+            ConsumoDiario consumoDiario = getConsumoDiarioActual();
+
             registroService.crearRegistro(
                     alimentoCombo.getValue(),
                     cantidadField.getValue().floatValue(),
-                    horarioAlimenticio);
+                    horarioAlimenticio,
+                    getCuentaActual(),
+                    consumoDiario);
 
             // Refrescar el grid principal
             grid.getDataProvider().refreshAll();

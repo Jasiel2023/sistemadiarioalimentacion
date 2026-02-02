@@ -3,6 +3,7 @@ package com.equipodinamita.base.models;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,9 +16,18 @@ public class RegistroConsumo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private Float cantidad;
+
     @ManyToOne
     @JoinColumn(name = "alimento_id")
     private Alimento alimento;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cuenta_id")
+    private Cuenta cuenta;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "consumo_diario_id")
+    private ConsumoDiario consumoDiario;
 
     @Enumerated(EnumType.STRING)
     private HorarioAlimenticioEnum horarioAlimenticio;
@@ -52,6 +62,22 @@ public class RegistroConsumo {
 
     public void setHorarioAlimenticio(HorarioAlimenticioEnum horarioAlimenticio) {
         this.horarioAlimenticio = horarioAlimenticio;
+    }
+
+    public Cuenta getCuenta() {
+        return this.cuenta;
+    }
+
+    public void setCuenta(Cuenta cuenta) {
+        this.cuenta = cuenta;
+    }
+
+    public ConsumoDiario getConsumoDiario() {
+        return this.consumoDiario;
+    }
+
+    public void setConsumoDiario(ConsumoDiario consumoDiario) {
+        this.consumoDiario = consumoDiario;
     }
 
 }
