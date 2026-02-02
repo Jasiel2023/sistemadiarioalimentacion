@@ -33,7 +33,6 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
-import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
@@ -173,20 +172,31 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                             fechaActual.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES);
 
             dialog.setText("Tienes alimentos registrados " + fechaTexto + " que aún no has guardado. " +
-                    "Por favor, haz clic en 'Guardar Consumo' antes de navegar al calendario.");
+                    "¿Qué deseas hacer?");
 
             dialog.setConfirmText("Guardar Consumo");
-            dialog.setConfirmButtonTheme("primary");
+            dialog.setConfirmButtonTheme("primary success");
             dialog.addConfirmListener(event -> {
                 // Guardar el consumo automáticamente
                 LocalDate fecha = getFechaActual();
                 consumoDiarioService.guardarConsumoDiario(cuenta, fecha);
                 Notification.show("✅ Consumo guardado correctamente", 3000, Notification.Position.BOTTOM_CENTER);
+                // Navegar al calendario después de guardar
+                UI.getCurrent().navigate("calendario-registro");
             });
 
-            // Sin botón de cancelar - es obligatorio
-            dialog.setCancelable(false);
-            dialog.setCloseOnEsc(false);
+            // Botón de "No guardar" - descarta cambios y navega al calendario
+            dialog.setRejectable(true);
+            dialog.setRejectText("No guardar");
+            dialog.addRejectListener(event -> {
+                // Navegar al calendario sin guardar
+                UI.getCurrent().navigate("calendario-registro");
+            });
+
+            // Botón de cancelar para cerrar el diálogo y quedarse
+            dialog.setCancelable(true);
+            dialog.setCancelText("Cancelar");
+            dialog.setCloseOnEsc(true);
 
             dialog.open();
         } else {
@@ -228,7 +238,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         setSizeFull();
         setPadding(false);
         setSpacing(false);
-        getStyle().setOverflow(Style.Overflow.HIDDEN);
+        getStyle().set("overflow-y", "auto"); // Permitir scroll vertical
 
         // Contenedor vertical para organizar filas de cuadros
         VerticalLayout cardsWrapper = new VerticalLayout();
@@ -883,7 +893,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                         toSpringPageRequest(query))
                 .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ALMUERZO, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -931,7 +941,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .listByConsumoDiarioAndHorario(consumoDiario, HorarioAlimenticioEnum.CENA, toSpringPageRequest(query))
                 .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.CENA, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -980,7 +990,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                         toSpringPageRequest(query))
                 .stream());
 
-        Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
+        Button crearEnDialogoBtn = new Button("Crear alimento", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ENTRETIEMPOS, dialogGrid);
         });
         crearEnDialogoBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);

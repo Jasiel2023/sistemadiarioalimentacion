@@ -112,12 +112,24 @@ public class RegistroConsumoService {
             throw new IllegalArgumentException("Datos de consumo inválidos");
         }
 
-        // Marcar el ConsumoDiario como no guardado (hay cambios pendientes)
-        if (rc.getConsumoDiario() != null) {
-            marcarConsumoDiarioComoNoGuardado(rc.getConsumoDiario());
-        }
+        // Obtener el registro existente de la base de datos para tener el ConsumoDiario
+        Optional<RegistroConsumo> registroExistente = registroConsumoRepository.findById(rc.getId());
+        if (registroExistente.isPresent()) {
+            RegistroConsumo existente = registroExistente.get();
 
-        return registroConsumoRepository.save(rc);
+            // Actualizar los campos
+            existente.setAlimento(rc.getAlimento());
+            existente.setCantidad(rc.getCantidad());
+
+            // Marcar el ConsumoDiario como no guardado (hay cambios pendientes)
+            if (existente.getConsumoDiario() != null) {
+                marcarConsumoDiarioComoNoGuardado(existente.getConsumoDiario());
+            }
+
+            return registroConsumoRepository.save(existente);
+        } else {
+            throw new IllegalArgumentException("Registro no encontrado");
+        }
     }
 
     @Transactional

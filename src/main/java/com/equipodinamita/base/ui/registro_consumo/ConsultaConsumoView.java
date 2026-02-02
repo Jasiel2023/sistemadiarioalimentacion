@@ -326,20 +326,36 @@ public class ConsultaConsumoView extends VerticalLayout {
         }
         // Días dentro del mes actual (pasados o futuros, no hoy)
         else {
-            // Fin de semana
-            if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
-                numeroSpan.getStyle().set("color", "#e74c3c");
-            } else {
-                numeroSpan.getStyle().set("color", "#333");
-            }
+            // Día futuro - estilo diferente
+            if (dia.isAfter(hoy)) {
+                cell.getStyle()
+                        .set("opacity", "0.6")
+                        .set("cursor", "not-allowed");
+                numeroSpan.getStyle().set("color", "#aaa");
 
-            // Agregar click listener para otros días del mes
-            final LocalDate fechaSeleccionada = dia;
-            cell.addClickListener(e -> {
-                navegarADia(fechaSeleccionada);
-            });
-            cell.setTitle("Clic para ver/crear registro del " + dia.getDayOfMonth() + " de " +
-                    dia.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES));
+                // Agregar click listener para mostrar mensaje
+                final LocalDate fechaSeleccionada = dia;
+                cell.addClickListener(e -> {
+                    navegarADia(fechaSeleccionada);
+                });
+                cell.setTitle("El día aún no llega");
+            } else {
+                // Día pasado - clickeable normalmente
+                // Fin de semana
+                if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                    numeroSpan.getStyle().set("color", "#e74c3c");
+                } else {
+                    numeroSpan.getStyle().set("color", "#333");
+                }
+
+                // Agregar click listener para otros días del mes
+                final LocalDate fechaSeleccionada = dia;
+                cell.addClickListener(e -> {
+                    navegarADia(fechaSeleccionada);
+                });
+                cell.setTitle("Clic para ver/crear registro del " + dia.getDayOfMonth() + " de " +
+                        dia.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES));
+            }
         }
 
         // Nombre del día de la semana (abreviado)
@@ -374,6 +390,13 @@ public class ConsultaConsumoView extends VerticalLayout {
      * La validación solo aplica si hay alimentos registrados sin guardar.
      */
     private void navegarADia(LocalDate fechaSeleccionada) {
+        // Validar si la fecha es futura
+        if (fechaSeleccionada.isAfter(LocalDate.now())) {
+            Notification.show("⏳ El día aún no llega", 3000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_CONTRAST);
+            return;
+        }
+
         Cuenta cuentaActual = getCuentaActual();
 
         if (cuentaActual == null) {
