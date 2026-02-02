@@ -6,30 +6,64 @@
 
 This project has the following structure:
 
-```
-src
+```src
 ├── main/java
-│   └── [application package]
+│   └── com.equipodinamita
 │       ├── base
+│       │   ├── models
+│       │   │   ├── Alimento.java
+│       │   │   ├── CategoriaEnum.java
+│       │   │   ├── Cliente.java
+│       │   │   ├── ConsumoDiario.java
+│       │   │   ├── Cuenta.java
+│       │   │   ├── HorarioAlimenticioEnum.java
+│       │   │   ├── Persona.java
+│       │   │   ├── RegistroConsumo.java
+│       │   │   ├── RolEnum.java
+│       │   │   └── UnidadEnum.java
+│       │   ├── Repository
+│       │   │   ├── AlimentoRepository.java
+│       │   │   ├── CuentaRepository.java
+│       │   │   ├── PersonaRepository.java
+│       │   │   └── RegistroConsumoRepository.java
+│       │   ├── Security
+│       │   │   └── SecurityConfiguration.java
+│       │   ├── Service
+│       │   │   ├── AlimentoService.java
+│       │   │   ├── CuentaServices.java
+│       │   │   ├── PersonaServices.java
+│       │   │   └── RegistroConsumoService.java
 │       │   └── ui
+│       │       ├── GestionUsuario
+│       │       │   ├── LoginView.java
+│       │       │   └── RegistroView.java
+│       │       ├── alimento
+│       │       │   ├── AlimentoListClient.java
+│       │       │   └── AlimentoListView.java
+│       │       ├── registro_consumo
+│       │       │   └── RegistroConsumoListView.java
+│       │       ├── HomeView.java
+│       │       ├── MainLayout.java
 │       │       ├── ViewToolbar.java
-│       │       └── MainLayout.java
+│       │       └── package-info.java
 │       ├── examplefeature
+│       │   ├── Repository
+│       │   │   └── TaskRepository.java
+│       │   ├── models
+│       │   │   └── Task.java
 │       │   ├── ui
 │       │   │   └── TaskListView.java
-│       │   ├── Task.java
-│       │   ├── TaskRepository.java
-│       │   └── TaskService.java                
-│       └── Application.java     
+│       │   ├── TaskService.java
+│       │   └── package-info.java
+│       └── Application.java
 ├── main/resources
-│   ├── META-INF
-│   │   └── resources
-│   │       └── styles.css
-│   └── application.properties 
+│   ├── META-INF/resources
+│   │   └── styles.css
+│   └── application.properties
 └── test/java
-    └── [application package]
+    └── com.equipodinamita
         └── examplefeature
-           └── TaskServiceTest.java                 
+            └── TaskServiceTest.java                
 ```
 
 The main entry point into the application is `Application.java`. This class contains the `main()` method that starts up 
