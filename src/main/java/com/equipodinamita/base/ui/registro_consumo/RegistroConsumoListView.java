@@ -23,7 +23,7 @@ import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRe
 
 @Route("registro-consumo")
 @PageTitle("Registro de Consumo")
-@Menu(order = 1, icon = "vaadin:clipboard-text", title = "Registro de Consumo")
+//@Menu(order = 1, icon = "vaadin:clipboard-text", title = "Registro de Consumo")
 public class RegistroConsumoListView extends VerticalLayout {
 
     private final RegistroConsumoService registroService;

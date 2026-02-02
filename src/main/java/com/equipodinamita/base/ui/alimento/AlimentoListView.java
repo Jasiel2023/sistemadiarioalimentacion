@@ -4,6 +4,7 @@ import com.equipodinamita.base.Service.AlimentoService;
 import com.equipodinamita.base.models.Alimento;
 import com.equipodinamita.base.models.CategoriaEnum;
 import com.equipodinamita.base.models.UnidadEnum;
+import com.equipodinamita.base.ui.MainLayout;
 import com.equipodinamita.base.ui.ViewToolbar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -21,10 +22,11 @@ import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
-@Route("alimentos")
+import com.equipodinamita.base.ui.MainLayout;
+@Route(value = "alimentos", layout = MainLayout.class)
 @PageTitle("Alimentos")
 
-@Menu(order = 0, icon = "vaadin:clipboard-check", title = "Alimento List Admin")
+//@Menu(order = 0, icon = "vaadin:clipboard-check", title = "Alimento List Admin")
 class AlimentoListView extends VerticalLayout {
 
     private final AlimentoService alimentoService;

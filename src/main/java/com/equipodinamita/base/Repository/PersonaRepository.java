@@ -1,4 +1,4 @@
-package com.equipodinamita.controller.Repository;
+package com.equipodinamita.base.Repository;
 
 import java.util.Optional;
 

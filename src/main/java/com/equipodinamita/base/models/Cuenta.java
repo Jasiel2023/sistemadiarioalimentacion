@@ -2,9 +2,12 @@ package com.equipodinamita.base.models;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
@@ -16,7 +19,17 @@ public class Cuenta {
     private Integer id;
 
     private boolean estado;
-    private int idpersona;
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "persona_id") 
+    private Persona persona;
+
+    public Persona getPersona() {
+        return this.persona;
+    }
+
+    public void setPersona(Persona persona) {
+        this.persona = persona;
+    }
 
      @NotBlank(message = "El email es obligatorio")
     @Email(message = "El email debe tener un formato válido")
@@ -51,7 +64,7 @@ public String getEmail() {
         this.password = password;
     }
 
-    public boolean isEstado() {
+    public boolean getEstado() {
         return this.estado;
     }
 
