@@ -23,6 +23,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -482,6 +483,11 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         }
 
         horarioSection.add(horariosGrid);
+
+        // === GRÁFICO DE PASTEL: Distribución de calorías por tipo de comida ===
+        VerticalLayout pieChartSection = createPieChartSection(consumoPorHorario, totalDiario.getCalorias());
+        horarioSection.add(pieChartSection);
+
         content.add(horarioSection);
 
         // === Seccion del total de calorias de un dia===
@@ -634,6 +640,189 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
 
         card.add(tituloSpan, registrosSpan, caloriasSpan);
         return card;
+    }
+
+    /**
+     * Crea la sección del gráfico de barras con la distribución de calorías por
+     * tipo de comida
+     */
+    private VerticalLayout createPieChartSection(Map<HorarioAlimenticioEnum, ConsumoDiario> consumoPorHorario,
+            float totalCalorias) {
+        VerticalLayout section = new VerticalLayout();
+        section.setAlignItems(FlexComponent.Alignment.CENTER);
+        section.setPadding(true);
+        section.setSpacing(true);
+        section.getStyle()
+                .set("margin-top", "20px")
+                .set("background-color", "#ffffff")
+                .set("border-radius", "12px")
+                .set("padding", "20px");
+
+        H3 tituloPie = new H3("📊 Distribución de Calorías por Tipo de Comida");
+        tituloPie.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+
+        // Colores para cada tipo de comida
+        String colorDesayuno = "#FF9800"; // Naranja
+        String colorAlmuerzo = "#4CAF50"; // Verde
+        String colorCena = "#2196F3"; // Azul
+        String colorEntretiempos = "#9C27B0"; // Morado
+
+        // Obtener calorías de cada horario
+        float calDesayuno = consumoPorHorario.containsKey(HorarioAlimenticioEnum.DESAYUNO)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.DESAYUNO).getCalorias()
+                : 0;
+        float calAlmuerzo = consumoPorHorario.containsKey(HorarioAlimenticioEnum.ALMUERZO)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.ALMUERZO).getCalorias()
+                : 0;
+        float calCena = consumoPorHorario.containsKey(HorarioAlimenticioEnum.CENA)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.CENA).getCalorias()
+                : 0;
+        float calEntretiempos = consumoPorHorario.containsKey(HorarioAlimenticioEnum.ENTRETIEMPOS)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.ENTRETIEMPOS).getCalorias()
+                : 0;
+
+        // Calcular porcentajes
+        float porcDesayuno = totalCalorias > 0 ? (calDesayuno / totalCalorias) * 100 : 0;
+        float porcAlmuerzo = totalCalorias > 0 ? (calAlmuerzo / totalCalorias) * 100 : 0;
+        float porcCena = totalCalorias > 0 ? (calCena / totalCalorias) * 100 : 0;
+        float porcEntretiempos = totalCalorias > 0 ? (calEntretiempos / totalCalorias) * 100 : 0;
+
+        // Contenedor del gráfico de barras
+        VerticalLayout barChartContainer = new VerticalLayout();
+        barChartContainer.setWidthFull();
+        barChartContainer.setSpacing(true);
+        barChartContainer.setPadding(false);
+        barChartContainer.getStyle().set("max-width", "500px");
+
+        // Crear barras para cada tipo de comida
+        if (calDesayuno > 0) {
+            barChartContainer.add(createBarItem("🌅 Desayuno", colorDesayuno, porcDesayuno, calDesayuno));
+        }
+        if (calAlmuerzo > 0) {
+            barChartContainer.add(createBarItem("☀️ Almuerzo", colorAlmuerzo, porcAlmuerzo, calAlmuerzo));
+        }
+        if (calCena > 0) {
+            barChartContainer.add(createBarItem("🌙 Cena", colorCena, porcCena, calCena));
+        }
+        if (calEntretiempos > 0) {
+            barChartContainer
+                    .add(createBarItem("🍿 Entretiempos", colorEntretiempos, porcEntretiempos, calEntretiempos));
+        }
+
+        // Determinar en qué tipo de comida se consumió más calorías
+        String mensajeMayorConsumo = determinarMayorConsumo(calDesayuno, calAlmuerzo, calCena, calEntretiempos);
+
+        Span mensajeSpan = new Span(mensajeMayorConsumo);
+        mensajeSpan.getStyle()
+                .set("font-size", "16px")
+                .set("font-weight", "bold")
+                .set("color", "#d32f2f")
+                .set("background-color", "#ffebee")
+                .set("padding", "12px 20px")
+                .set("border-radius", "8px")
+                .set("margin-top", "15px")
+                .set("text-align", "center");
+
+        section.add(tituloPie, barChartContainer, mensajeSpan);
+        return section;
+    }
+
+    /**
+     * Crea una barra del gráfico de barras
+     */
+    private VerticalLayout createBarItem(String nombre, String color, float porcentaje, float calorias) {
+        VerticalLayout barContainer = new VerticalLayout();
+        barContainer.setWidthFull();
+        barContainer.setSpacing(false);
+        barContainer.setPadding(false);
+        barContainer.getStyle().set("margin-bottom", "10px");
+
+        // Etiqueta con nombre y valores
+        HorizontalLayout labelRow = new HorizontalLayout();
+        labelRow.setWidthFull();
+        labelRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        labelRow.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        Span nombreSpan = new Span(nombre);
+        nombreSpan.getStyle()
+                .set("font-weight", "bold")
+                .set("font-size", "14px");
+
+        Span valorSpan = new Span(String.format("%.1f%% (%.0f kcal)", porcentaje, calorias));
+        valorSpan.getStyle()
+                .set("font-size", "13px")
+                .set("color", "#666");
+
+        labelRow.add(nombreSpan, valorSpan);
+
+        // Contenedor de la barra (fondo gris)
+        Div barBackground = new Div();
+        barBackground.getStyle()
+                .set("width", "100%")
+                .set("height", "25px")
+                .set("background-color", "#e0e0e0")
+                .set("border-radius", "12px")
+                .set("overflow", "hidden")
+                .set("margin-top", "5px");
+
+        // Barra de progreso con el color correspondiente
+        Div barFill = new Div();
+        barFill.getStyle()
+                .set("width", String.format("%.1f%%", porcentaje))
+                .set("height", "100%")
+                .set("background-color", color)
+                .set("border-radius", "12px")
+                .set("transition", "width 0.5s ease-in-out")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center");
+
+        // Porcentaje dentro de la barra si es suficientemente grande
+        if (porcentaje > 15) {
+            Span porcentajeEnBarra = new Span(String.format("%.0f%%", porcentaje));
+            porcentajeEnBarra.getStyle()
+                    .set("color", "#ffffff")
+                    .set("font-weight", "bold")
+                    .set("font-size", "12px");
+            barFill.add(porcentajeEnBarra);
+        }
+
+        barBackground.add(barFill);
+        barContainer.add(labelRow, barBackground);
+
+        return barContainer;
+    }
+
+    /**
+     * Determina el mensaje indicando en qué tipo de comida se consumieron más
+     * calorías
+     */
+    private String determinarMayorConsumo(float calDesayuno, float calAlmuerzo, float calCena, float calEntretiempos) {
+        float maxCalorias = Math.max(Math.max(calDesayuno, calAlmuerzo), Math.max(calCena, calEntretiempos));
+
+        if (maxCalorias == 0) {
+            return "📊 No hay datos de consumo registrados";
+        }
+
+        String tipoComida;
+        String emoji;
+
+        if (maxCalorias == calDesayuno) {
+            tipoComida = "DESAYUNO";
+            emoji = "🌅";
+        } else if (maxCalorias == calAlmuerzo) {
+            tipoComida = "ALMUERZO";
+            emoji = "☀️";
+        } else if (maxCalorias == calCena) {
+            tipoComida = "CENA";
+            emoji = "🌙";
+        } else {
+            tipoComida = "ENTRETIEMPOS";
+            emoji = "🍿";
+        }
+
+        return String.format("%s El mayor consumo de calorías fue en %s con %.0f kcal",
+                emoji, tipoComida, maxCalorias);
     }
 
     private VerticalLayout createBreakfastCard() {
