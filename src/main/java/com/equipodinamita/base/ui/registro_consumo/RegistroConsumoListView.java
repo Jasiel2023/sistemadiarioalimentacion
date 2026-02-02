@@ -7,6 +7,7 @@ import com.equipodinamita.base.Service.ConsumoDiarioService;
 import com.equipodinamita.base.Service.RegistroConsumoService;
 import com.equipodinamita.base.models.Alimento;
 import com.equipodinamita.base.models.ConsumoDiario;
+import com.equipodinamita.base.models.Cuenta;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
 import com.equipodinamita.base.ui.ViewToolbar;
@@ -28,14 +29,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.dom.Style;
-import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
 
 @Route("registro-consumo")
 @PageTitle("Registro de Consumo")
-//@Menu(order = 1, icon = "vaadin:clipboard-text", title = "Registro de Consumo")
+// @Menu(order = 1, icon = "vaadin:clipboard-text", title = "Registro de
+// Consumo")
 public class RegistroConsumoListView extends VerticalLayout {
 
     private final RegistroConsumoService registroService;
@@ -48,6 +50,11 @@ public class RegistroConsumoListView extends VerticalLayout {
     private VerticalLayout itemsContainerAlmuerzo;
     private VerticalLayout itemsContainerCena;
     private VerticalLayout itemsContainerEntretiempo;
+
+    // Método helper para obtener la cuenta del usuario actual
+    private Cuenta getCuentaActual() {
+        return VaadinSession.getCurrent().getAttribute(Cuenta.class);
+    }
 
     public RegistroConsumoListView(
             RegistroConsumoService registroService,
@@ -62,7 +69,7 @@ public class RegistroConsumoListView extends VerticalLayout {
         crearBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
         grid = new Grid<>();
-        grid.setItems(query -> registroService.list(toSpringPageRequest(query)).stream());
+        grid.setItems(query -> registroService.list(getCuentaActual(), toSpringPageRequest(query)).stream());
 
         setSizeFull();
         setPadding(false);
@@ -153,8 +160,9 @@ public class RegistroConsumoListView extends VerticalLayout {
         content.setSpacing(true);
         content.getStyle().set("overflow-y", "auto");
 
-        // Obtener el total de consumo diario
-        ConsumoDiario totalDiario = consumoDiarioService.calcularTotalConsumoDiario();
+        // Obtener el total de consumo diario del usuario actual
+        Cuenta cuentaActual = getCuentaActual();
+        ConsumoDiario totalDiario = consumoDiarioService.calcularTotalConsumoDiario(cuentaActual);
 
         if (totalDiario.getTotalRegistros() == 0) {
             content.add(new H3("⚠️ No hay registros de consumo para hoy"));
@@ -195,7 +203,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         // === SECCIÓN: PROMEDIO POR HORARIO ===
         Map<HorarioAlimenticioEnum, ConsumoDiario> promediosPorHorario = consumoDiarioService
-                .calcularPromedioPorCadaHorario();
+                .calcularPromedioPorCadaHorario(cuentaActual);
 
         VerticalLayout horarioSection = new VerticalLayout();
         horarioSection.setPadding(true);
@@ -470,7 +478,7 @@ public class RegistroConsumoListView extends VerticalLayout {
     // --- REFRESH ITEMS ---
     private void refreshBreakfastItems() {
         itemsContainer.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.DESAYUNO,
+        registroService.listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.DESAYUNO,
                 org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
                     if (registro.getAlimento() != null) {
                         String nombreAlimento = registro.getAlimento().getNombre();
@@ -486,7 +494,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     private void refreshAlmuerzoItems() {
         itemsContainerAlmuerzo.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.ALMUERZO,
+        registroService.listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.ALMUERZO,
                 org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
                     if (registro.getAlimento() != null) {
                         String nombreAlimento = registro.getAlimento().getNombre();
@@ -502,7 +510,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     private void refreshCenaItems() {
         itemsContainerCena.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA,
+        registroService.listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.CENA,
                 org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
                     if (registro.getAlimento() != null) {
                         String nombreAlimento = registro.getAlimento().getNombre();
@@ -519,7 +527,7 @@ public class RegistroConsumoListView extends VerticalLayout {
 
     private void refreshEntretiempoItems() {
         itemsContainerEntretiempo.removeAll();
-        registroService.listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS,
+        registroService.listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.ENTRETIEMPOS,
                 org.springframework.data.domain.Pageable.unpaged()).forEach(registro -> {
                     if (registro.getAlimento() != null) {
                         String nombreAlimento = registro.getAlimento().getNombre();
@@ -568,7 +576,9 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.DESAYUNO, toSpringPageRequest(query)).stream());
+                .listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.DESAYUNO,
+                        toSpringPageRequest(query))
+                .stream());
 
         Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.DESAYUNO, dialogGrid);
@@ -614,7 +624,9 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.ALMUERZO, toSpringPageRequest(query)).stream());
+                .listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.ALMUERZO,
+                        toSpringPageRequest(query))
+                .stream());
 
         Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ALMUERZO, dialogGrid);
@@ -660,7 +672,8 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.CENA, toSpringPageRequest(query)).stream());
+                .listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.CENA, toSpringPageRequest(query))
+                .stream());
 
         Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.CENA, dialogGrid);
@@ -706,7 +719,9 @@ public class RegistroConsumoListView extends VerticalLayout {
 
         Grid<RegistroConsumo> dialogGrid = new Grid<>();
         dialogGrid.setItems(query -> registroService
-                .listByHorarioAlimenticio(HorarioAlimenticioEnum.ENTRETIEMPOS, toSpringPageRequest(query)).stream());
+                .listByHorarioAlimenticio(getCuentaActual(), HorarioAlimenticioEnum.ENTRETIEMPOS,
+                        toSpringPageRequest(query))
+                .stream());
 
         Button crearEnDialogoBtn = new Button("Crear consumo", new Icon(VaadinIcon.PLUS_CIRCLE), e -> {
             openCreateDialog(HorarioAlimenticioEnum.ENTRETIEMPOS, dialogGrid);
@@ -782,7 +797,8 @@ public class RegistroConsumoListView extends VerticalLayout {
             registroService.crearRegistro(
                     alimentoCombo.getValue(),
                     cantidadField.getValue().floatValue(),
-                    horarioAlimenticio);
+                    horarioAlimenticio,
+                    getCuentaActual());
 
             // Refrescar el grid principal
             grid.getDataProvider().refreshAll();

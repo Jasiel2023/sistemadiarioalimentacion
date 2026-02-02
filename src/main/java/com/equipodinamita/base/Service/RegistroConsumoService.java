@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.equipodinamita.base.Repository.RegistroConsumoRepository;
 import com.equipodinamita.base.models.Alimento;
+import com.equipodinamita.base.models.Cuenta;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
 
@@ -21,7 +22,8 @@ public class RegistroConsumoService {
     }
 
     @Transactional
-    public void crearRegistro(Alimento alimento, Float cantidad, HorarioAlimenticioEnum horarioAlimenticio) {
+    public void crearRegistro(Alimento alimento, Float cantidad, HorarioAlimenticioEnum horarioAlimenticio,
+            Cuenta cuenta) {
 
         if (alimento == null) {
             throw new IllegalArgumentException("El alimento es obligatorio");
@@ -35,10 +37,15 @@ public class RegistroConsumoService {
             throw new IllegalArgumentException("El horario de comida es obligatorio");
         }
 
+        if (cuenta == null) {
+            throw new IllegalArgumentException("La cuenta del usuario es obligatoria");
+        }
+
         RegistroConsumo rc = new RegistroConsumo();
         rc.setAlimento(alimento);
         rc.setCantidad(cantidad);
         rc.setHorarioAlimenticio(horarioAlimenticio);
+        rc.setCuenta(cuenta);
 
         registroConsumoRepository.save(rc);
     }
@@ -60,14 +67,20 @@ public class RegistroConsumoService {
     }
 
     @Transactional(readOnly = true)
-    public List<RegistroConsumo> list(Pageable pageable) {
-        return registroConsumoRepository.findAllBy(pageable).toList();
+    public List<RegistroConsumo> list(Cuenta cuenta, Pageable pageable) {
+        return registroConsumoRepository.findByCuenta(cuenta, pageable).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<RegistroConsumo> listByHorarioAlimenticio(HorarioAlimenticioEnum horarioAlimenticio,
+    public List<RegistroConsumo> listByHorarioAlimenticio(Cuenta cuenta, HorarioAlimenticioEnum horarioAlimenticio,
             Pageable pageable) {
-        return registroConsumoRepository.findByHorarioAlimenticio(horarioAlimenticio, pageable).toList();
+        return registroConsumoRepository.findByCuentaAndHorarioAlimenticio(cuenta, horarioAlimenticio, pageable)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RegistroConsumo> findAllByCuenta(Cuenta cuenta) {
+        return registroConsumoRepository.findAllByCuenta(cuenta);
     }
 
     public void delete(Integer id) {

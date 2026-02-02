@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.equipodinamita.base.Repository.RegistroConsumoRepository;
 import com.equipodinamita.base.models.Alimento;
 import com.equipodinamita.base.models.ConsumoDiario;
+import com.equipodinamita.base.models.Cuenta;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
 
@@ -36,27 +37,31 @@ public class ConsumoDiarioService {
     }
 
     /**
-     * Calcula el promedio de consumo diario de TODOS los registros de consumo.
+     * Calcula el promedio de consumo diario de TODOS los registros de consumo del
+     * usuario.
      * 
+     * @param cuenta la cuenta del usuario
      * @return ConsumoDiario con los promedios de calorías, proteínas,
      *         carbohidratos y grasas
      */
     @Transactional(readOnly = true)
-    public ConsumoDiario calcularPromedioConsumoGeneral() {
-        List<RegistroConsumo> registros = registroConsumoRepository.findAll();
+    public ConsumoDiario calcularPromedioConsumoGeneral(Cuenta cuenta) {
+        List<RegistroConsumo> registros = registroConsumoRepository.findAllByCuenta(cuenta);
         return calcularPromedioDeRegistros(registros);
     }
 
     /**
-     * Calcula el promedio de consumo por tipo de comida (horario alimenticio).
+     * Calcula el promedio de consumo por tipo de comida (horario alimenticio) del
+     * usuario.
      * 
+     * @param cuenta             la cuenta del usuario
      * @param horarioAlimenticio el tipo de comida (DESAYUNO, ALMUERZO, CENA,
      *                           ENTRETIEMPOS)
      * @return ConsumoDiario para ese horario específico
      */
     @Transactional(readOnly = true)
-    public ConsumoDiario calcularPromedioPorHorario(HorarioAlimenticioEnum horarioAlimenticio) {
-        List<RegistroConsumo> registros = registroConsumoRepository.findAll()
+    public ConsumoDiario calcularPromedioPorHorario(Cuenta cuenta, HorarioAlimenticioEnum horarioAlimenticio) {
+        List<RegistroConsumo> registros = registroConsumoRepository.findAllByCuenta(cuenta)
                 .stream()
                 .filter(r -> r.getHorarioAlimenticio() == horarioAlimenticio)
                 .toList();
@@ -64,16 +69,17 @@ public class ConsumoDiarioService {
     }
 
     /**
-     * Calcula el promedio de consumo para CADA tipo de comida.
+     * Calcula el promedio de consumo para CADA tipo de comida del usuario.
      * 
+     * @param cuenta la cuenta del usuario
      * @return Map con el horario alimenticio como clave y su ConsumoDiario
      */
     @Transactional(readOnly = true)
-    public Map<HorarioAlimenticioEnum, ConsumoDiario> calcularPromedioPorCadaHorario() {
+    public Map<HorarioAlimenticioEnum, ConsumoDiario> calcularPromedioPorCadaHorario(Cuenta cuenta) {
         Map<HorarioAlimenticioEnum, ConsumoDiario> promediosPorHorario = new HashMap<>();
 
         for (HorarioAlimenticioEnum horario : HorarioAlimenticioEnum.values()) {
-            ConsumoDiario promedio = calcularPromedioPorHorario(horario);
+            ConsumoDiario promedio = calcularPromedioPorHorario(cuenta, horario);
             promediosPorHorario.put(horario, promedio);
         }
 
@@ -81,13 +87,14 @@ public class ConsumoDiarioService {
     }
 
     /**
-     * Calcula el TOTAL de consumo diario (suma de todos los registros).
+     * Calcula el TOTAL de consumo diario (suma de todos los registros) del usuario.
      * 
+     * @param cuenta la cuenta del usuario
      * @return ConsumoDiario con los totales (no promedios)
      */
     @Transactional(readOnly = true)
-    public ConsumoDiario calcularTotalConsumoDiario() {
-        List<RegistroConsumo> registros = registroConsumoRepository.findAll();
+    public ConsumoDiario calcularTotalConsumoDiario(Cuenta cuenta) {
+        List<RegistroConsumo> registros = registroConsumoRepository.findAllByCuenta(cuenta);
         return calcularTotalesDeRegistros(registros);
     }
 
