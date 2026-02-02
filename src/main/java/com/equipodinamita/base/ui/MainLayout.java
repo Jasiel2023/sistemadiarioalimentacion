@@ -24,34 +24,49 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.menu.MenuConfiguration;
 import com.vaadin.flow.server.menu.MenuEntry;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vaadin.flow.theme.lumo.LumoUtility.Margin.Minus.Vertical;
 
 @Layout
 public final class MainLayout extends AppLayout implements AfterNavigationObserver{
     private SideNav nav;
+    private VerticalLayout footer;
     MainLayout() {
         setPrimarySection(Section.DRAWER);
         nav = new SideNav();
-        addToDrawer(createHeader(), new Scroller(nav), createFooter());
+        footer = createFooter();
+        addToDrawer(createHeader(), new Scroller(nav), footer);
     }
 
     @Override
     public void afterNavigation(AfterNavigationEvent event) {
         String rutaActual = event.getLocation().getPath();
-        if ("login".equals(rutaActual)) {
+        if ("login".equals(rutaActual) || "".equals(rutaActual) || "registro".equals(rutaActual)) {
+            actualizarVisibilidad(false);
+
+            Cuenta cuenta = VaadinSession.getCurrent().getAttribute(Cuenta.class);
+            if (cuenta != null) {
+                regenerarMenu();
+            }
             return;
         }
         regenerarMenu();
     }
 
+    private void actualizarVisibilidad(boolean visible) {
+        footer.setVisible(visible);
+        nav.setVisible(visible);
+
+    }
     private void regenerarMenu() {
         nav.removeAll();
         Cuenta cuenta = VaadinSession.getCurrent().getAttribute(Cuenta.class);
         if (cuenta == null || cuenta.getPersona() == null) {
+            actualizarVisibilidad(false);
             System.out.println("Redirigiendo a login desde MainLayout");
             UI.getCurrent().getPage().setLocation("login");
             return;
     }
-
+    actualizarVisibilidad(true);
     System.out.println("Generando Menú para usuario: " + cuenta.getEmail());
 
     RolEnum rol = cuenta.getPersona().getRol();
@@ -79,8 +94,7 @@ public final class MainLayout extends AppLayout implements AfterNavigationObserv
 
     
 
-    private Component createFooter(){
-
+    private VerticalLayout createFooter(){
         Button logoutButton = new Button("Cerrar Sesion", new Icon(VaadinIcon.SIGN_OUT));
         logoutButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY, ButtonVariant.LUMO_ERROR);
         logoutButton.setWidthFull();
@@ -89,8 +103,10 @@ public final class MainLayout extends AppLayout implements AfterNavigationObserv
             UI.getCurrent().getPage().setLocation("login");
         });
 
-        var footer = new VerticalLayout(logoutButton);
-        footer.setAlignItems(FlexComponent.Alignment.CENTER);
-        return footer;
+       VerticalLayout layout = new VerticalLayout(logoutButton);
+        layout.setAlignItems(FlexComponent.Alignment.CENTER);
+        layout.setPadding(true);
+        
+        return layout;
     }
 }
