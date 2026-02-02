@@ -197,6 +197,12 @@ public class RegistroConsumoService {
         return registroConsumoRepository.findAllByCuenta(cuenta);
     }
 
+    @Transactional(readOnly = true)
+    public List<RegistroConsumo> listByHorarioAlimenticio(HorarioAlimenticioEnum horarioAlimenticio,
+            Pageable pageable) {
+        return registroConsumoRepository.findByHorarioAlimenticio(horarioAlimenticio, pageable).toList();
+    }
+
     public void delete(Integer id) {
         registroConsumoRepository.deleteById(id);
     }

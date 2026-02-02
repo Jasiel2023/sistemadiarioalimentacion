@@ -22,13 +22,14 @@ public class AlimentoService {
 
     @Transactional//Abre transaccion, ejecuta metodo,ok? , realiza estos en SQL por parte de Spring
     public void createAlimento(String nombre, Float calorias, Float proteinas, Float carbohidratos, Float grasas, Float porcionBase, UnidadEnum unidadMedida, CategoriaEnum categoria) {
-        if (unidadMedida == null || categoria == null) {
-        throw new IllegalArgumentException(
-            "La unidad de medida y la categoría son obligatorias"
-        );
-    }
-        var alimento = new Alimento(nombre, calorias, proteinas, carbohidratos, grasas, porcionBase, unidadMedida, categoria);
-        alimentoRepository.saveAndFlush(alimento);//Guardado ek la base de datos
+        validarAlimento(nombre, calorias, proteinas, carbohidratos, grasas, porcionBase, unidadMedida, categoria);
+        String nombreNormalizado = nombre.trim();
+        //NO MOFIQUES ESTO OE >:(
+        if (alimentoRepository.existsByNombreIgnoreCase(nombreNormalizado)) {
+            throw new IllegalArgumentException("Ya existe un alimento con ese nombre");
+        }
+            var alimento = new Alimento(nombre, calorias, proteinas, carbohidratos, grasas, porcionBase, unidadMedida, categoria);
+            alimentoRepository.saveAndFlush(alimento);//Guardado ek la base de datos
     }
 
     public void deleteAlimento(Integer id) {
@@ -42,6 +43,17 @@ public class AlimentoService {
     if (alimento.getId() == null) {
         throw new IllegalArgumentException("El alimento debe tener ID para editarse");
     }
+    
+    validarAlimento(
+        alimento.getNombre(),
+        alimento.getCalorias(),
+        alimento.getProteinas(),
+        alimento.getCarbohidratos(),
+        alimento.getGrasas(),
+        alimento.getPorcionBase(),
+        alimento.getUnidadMedida(),
+        alimento.getCategoria()
+    );
     return alimentoRepository.save(alimento);
     }
 
@@ -55,5 +67,49 @@ public class AlimentoService {
     public List<Alimento> findAll() {
     return alimentoRepository.findAll();
     }
+
+    private void validarAlimento(
+        String nombre,
+        Float calorias,
+        Float proteinas,
+        Float carbohidratos,
+        Float grasas,
+        Float porcionBase,
+        UnidadEnum unidadMedida,
+        CategoriaEnum categoria
+) {
+    if (nombre == null || nombre.trim().isEmpty()) {
+        throw new IllegalArgumentException("El nombre del alimento es obligatorio");
+    }
+
+    if (calorias == null || calorias < 0) {
+        throw new IllegalArgumentException("Las calorías son obligatorias y deben ser >= 0");
+    }
+
+    if (proteinas == null || proteinas < 0) {
+        throw new IllegalArgumentException("Las proteínas son obligatorias y deben ser >= 0");
+    }
+
+    if (carbohidratos == null || carbohidratos < 0) {
+        throw new IllegalArgumentException("Los carbohidratos son obligatorios y deben ser >= 0");
+    }
+
+    if (grasas == null || grasas < 0) {
+        throw new IllegalArgumentException("Las grasas son obligatorias y deben ser >= 0");
+    }
+
+    if (porcionBase == null || porcionBase <= 0) {
+        throw new IllegalArgumentException("La porción base es obligatoria y debe ser mayor que 0");
+    }
+
+    if (unidadMedida == null) {
+        throw new IllegalArgumentException("La unidad de medida es obligatoria");
+    }
+
+    if (categoria == null) {
+        throw new IllegalArgumentException("La categoría es obligatoria");
+    }
+}
+
 
 }

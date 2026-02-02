@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -29,6 +30,7 @@ public class Alimento {
     private Float porcionBase;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "unidad_medida", length = 50, nullable = false)
     private UnidadEnum unidadMedida;
 
     @Enumerated(EnumType.STRING)

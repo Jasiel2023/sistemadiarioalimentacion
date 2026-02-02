@@ -8,5 +8,6 @@ public enum CategoriaEnum {
     LACTEOS,
     CEREAL,
     GRASAS,
+    PESCADOS,
     OTROS
 }

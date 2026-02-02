@@ -358,6 +358,29 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
             fechaContainer.setVisible(tituloFechaSpan.isVisible());
         });
 
+        // Contenedor vertical para organizar filas de cuadros
+        VerticalLayout cardsWrapper = new VerticalLayout();
+        cardsWrapper.setWidthFull();
+        cardsWrapper.setPadding(true);
+        cardsWrapper.setSpacing(true);
+
+        // Primera fila: dos cuadros
+        HorizontalLayout firstRow = new HorizontalLayout();
+        firstRow.setWidthFull();
+        firstRow.setSpacing(true);
+        firstRow.add(createBreakfastCard(), createMeriendaCard());
+
+        // Segunda fila: dos cuadros
+        HorizontalLayout secondRow = new HorizontalLayout();
+        secondRow.setWidthFull();
+        secondRow.setSpacing(true);
+        secondRow.add(createAlmuerzoCard(), createEntretiempoCard());
+
+        cardsWrapper.add(firstRow, secondRow);
+
+        // --- BOTÓN VER CONSUMO EN LA PARTE INFERIOR ---
+        HorizontalLayout bottomButtonContainer = createVerConsumoButton();
+
         add(
                 new ViewToolbar("Registro de Consumo", btnGuardarConsumo),
                 fechaContainer,
