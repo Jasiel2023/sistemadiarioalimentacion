@@ -214,6 +214,26 @@ class AlimentoListView extends VerticalLayout {
     categoriaEdit.setValue(alimento.getCategoria());
 
     Button saveBtn = new Button("Guardar", e -> {
+
+    if (!validarFormulario(
+            nombreEdit,
+            caloriasEdit,
+            proteinasEdit,
+            carboEdit,
+            grasasEdit,
+            porcionEdit,
+            unidadEdit,
+            categoriaEdit
+    )) {
+        Notification.show(
+                "Por favor completa los campos marcados en rojo",
+                3000,
+                Notification.Position.MIDDLE
+        ).addThemeVariants(NotificationVariant.LUMO_ERROR);
+        return;
+    }
+
+    try {
         alimento.setNombre(nombreEdit.getValue());
         alimento.setCalorias(toFloat(caloriasEdit.getValue()));
         alimento.setProteinas(toFloat(proteinasEdit.getValue()));
@@ -224,13 +244,19 @@ class AlimentoListView extends VerticalLayout {
         alimento.setCategoria(categoriaEdit.getValue());
 
         alimentoService.updateAlimento(alimento);
+
         alimentoGrid.getDataProvider().refreshAll();
         dialog.close();
 
-        Notification.show("Alimento actualizado", 3000,
+        Notification.show("Alimento actualizado correctamente", 3000,
                 Notification.Position.BOTTOM_END)
                 .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-    });
+
+    } catch (IllegalArgumentException ex) {
+        Notification.show(ex.getMessage(), 4000, Notification.Position.MIDDLE)
+                .addThemeVariants(NotificationVariant.LUMO_ERROR);
+    }
+});
 
     saveBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
