@@ -4,15 +4,8 @@ import com.equipodinamita.base.Service.AlimentoService;
 import com.equipodinamita.base.models.Alimento;
 import com.equipodinamita.base.ui.MainLayout;
 import com.equipodinamita.base.ui.ViewToolbar;
-import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.PageTitle;
@@ -59,24 +52,8 @@ class AlimentoListClient extends VerticalLayout {
                 setSpacing(false);
                 getStyle().setOverflow(Style.Overflow.HIDDEN);
 
-                // Botón Ver Consumo
-                Button btnVerConsumo = new Button("Consultar Consumo", new Icon(VaadinIcon.CLIPBOARD_TEXT));
-                btnVerConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                btnVerConsumo.getStyle()
-                                .set("background-color", "#6a419d")
-                                .set("color", "#ffffff")
-                                .set("border-radius", "8px")
-                                .set("padding", "10px 20px");
-                btnVerConsumo.addClickListener(e -> UI.getCurrent().navigate("calendario-registro"));
-
-                HorizontalLayout buttonContainer = new HorizontalLayout(btnVerConsumo);
-                buttonContainer.setWidthFull();
-                buttonContainer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-                buttonContainer.getStyle().set("padding", "20px");
-
                 add(
                                 new ViewToolbar("Listado de Alimentos"),
-                                alimentoGrid,
-                                buttonContainer);
+                                alimentoGrid);
         }
 }

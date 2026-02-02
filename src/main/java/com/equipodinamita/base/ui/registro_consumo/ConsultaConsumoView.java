@@ -9,21 +9,30 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import com.equipodinamita.base.Service.ConsumoDiarioService;
+import com.equipodinamita.base.Service.RegistroConsumoService;
+import com.equipodinamita.base.models.ConsumoDiario;
+import com.equipodinamita.base.models.Cuenta;
+import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.ui.ViewToolbar;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Menu;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.server.VaadinSession;
 
 @Route("calendario-registro")
 @PageTitle("Calendario Registro de Consumo")
@@ -36,13 +45,23 @@ public class ConsultaConsumoView extends VerticalLayout {
             "#FFE0E0", "#E0FFE0", "#E0E0FF", "#FFFFE0", "#FFE0FF", "#E0FFFF"
     };
 
+    private final ConsumoDiarioService consumoDiarioService;
+    private final RegistroConsumoService registroService;
+
     private YearMonth mesActual;
     private VerticalLayout calendarioContainer;
     private H2 tituloMes;
     private Map<Integer, String> coloresSemanas;
     private Random random;
 
-    public ConsultaConsumoView() {
+    // Método helper para obtener la cuenta del usuario actual
+    private Cuenta getCuentaActual() {
+        return VaadinSession.getCurrent().getAttribute(Cuenta.class);
+    }
+
+    public ConsultaConsumoView(ConsumoDiarioService consumoDiarioService, RegistroConsumoService registroService) {
+        this.consumoDiarioService = consumoDiarioService;
+        this.registroService = registroService;
         this.mesActual = YearMonth.now();
         this.random = new Random();
         this.coloresSemanas = new HashMap<>();
@@ -277,11 +296,12 @@ public class ConsultaConsumoView extends VerticalLayout {
                 .set("font-size", "18px")
                 .set("font-weight", "bold");
 
-        // Día fuera del mes actual
+        // Día fuera del mes actual - no clickeable
         if (dia.isBefore(primerDia) || dia.isAfter(ultimoDia)) {
             cell.getStyle()
                     .set("background-color", "#f5f5f5")
-                    .set("opacity", "0.5");
+                    .set("opacity", "0.5")
+                    .set("cursor", "default");
             numeroSpan.getStyle().set("color", "#999");
         }
         // Día actual (hoy)
@@ -302,16 +322,24 @@ public class ConsultaConsumoView extends VerticalLayout {
             cell.addClickListener(e -> {
                 UI.getCurrent().navigate(RegistroConsumoListView.class);
             });
-            cell.getStyle().set("cursor", "pointer");
-            cell.setTitle("Clic para ir a Registro de Consumo");
+            cell.setTitle("Clic para ir a Registro de Consumo de Hoy");
         }
-        // Fin de semana
-        else if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
-            numeroSpan.getStyle().set("color", "#e74c3c");
-        }
-        // Día normal
+        // Días dentro del mes actual (pasados o futuros, no hoy)
         else {
-            numeroSpan.getStyle().set("color", "#333");
+            // Fin de semana
+            if (dia.getDayOfWeek() == DayOfWeek.SATURDAY || dia.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                numeroSpan.getStyle().set("color", "#e74c3c");
+            } else {
+                numeroSpan.getStyle().set("color", "#333");
+            }
+
+            // Agregar click listener para otros días del mes
+            final LocalDate fechaSeleccionada = dia;
+            cell.addClickListener(e -> {
+                navegarADia(fechaSeleccionada);
+            });
+            cell.setTitle("Clic para ver/crear registro del " + dia.getDayOfMonth() + " de " +
+                    dia.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES));
         }
 
         // Nombre del día de la semana (abreviado)
@@ -323,23 +351,81 @@ public class ConsultaConsumoView extends VerticalLayout {
 
         cell.add(numeroSpan, nombreDia);
 
-        // Efecto hover
-        cell.getElement().addEventListener("mouseover", e -> {
-            cell.getStyle().set("background-color", "#e8e0f0");
-        });
-        cell.getElement().addEventListener("mouseout", e -> {
-            if (!dia.equals(hoy)) {
-                if (dia.isBefore(primerDia) || dia.isAfter(ultimoDia)) {
-                    cell.getStyle().set("background-color", "#f5f5f5");
-                } else {
+        // Efecto hover solo para días dentro del mes
+        if (!dia.isBefore(primerDia) && !dia.isAfter(ultimoDia)) {
+            cell.getElement().addEventListener("mouseover", e -> {
+                cell.getStyle().set("background-color", "#e8e0f0");
+            });
+            cell.getElement().addEventListener("mouseout", e -> {
+                if (!dia.equals(hoy)) {
                     cell.getStyle().remove("background-color");
+                } else {
+                    cell.getStyle().set("background-color", "#6a419d");
                 }
-            } else {
-                cell.getStyle().set("background-color", "#6a419d");
-            }
-        });
+            });
+        }
 
         return cell;
+    }
+
+    /**
+     * Navega al registro de consumo de un día específico.
+     * Verifica primero si el consumo de HOY requiere ser guardado.
+     * La validación solo aplica si hay alimentos registrados sin guardar.
+     */
+    private void navegarADia(LocalDate fechaSeleccionada) {
+        Cuenta cuentaActual = getCuentaActual();
+
+        if (cuentaActual == null) {
+            Notification.show("Error: No hay usuario autenticado", 3000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            return;
+        }
+
+        // Obtener el ConsumoDiario de hoy y verificar directamente si tiene registros
+        // sin guardar
+        ConsumoDiario consumoDiarioHoy = consumoDiarioService.obtenerOCrearConsumoDiario(cuentaActual, LocalDate.now());
+
+        boolean tieneRegistros = consumoDiarioHoy != null && (!registroService
+                .findByConsumoDiarioAndHorario(consumoDiarioHoy, HorarioAlimenticioEnum.DESAYUNO).isEmpty() ||
+                !registroService.findByConsumoDiarioAndHorario(consumoDiarioHoy, HorarioAlimenticioEnum.ALMUERZO)
+                        .isEmpty()
+                ||
+                !registroService.findByConsumoDiarioAndHorario(consumoDiarioHoy, HorarioAlimenticioEnum.CENA).isEmpty()
+                ||
+                !registroService.findByConsumoDiarioAndHorario(consumoDiarioHoy, HorarioAlimenticioEnum.ENTRETIEMPOS)
+                        .isEmpty());
+
+        boolean yaGuardado = consumoDiarioHoy != null && consumoDiarioHoy.isGuardado();
+        boolean requiereGuardar = tieneRegistros && !yaGuardado;
+
+        if (requiereGuardar) {
+            // Mostrar diálogo de advertencia - SIN opción de cancelar
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader("⚠️ Debes guardar tu consumo de hoy primero");
+            dialog.setText("Tienes alimentos registrados HOY (" +
+                    LocalDate.now().getDayOfMonth() + " de " +
+                    LocalDate.now().getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES) + ") " +
+                    "que aún no has guardado. " +
+                    "Por favor, guarda tu consumo antes de ver o registrar en otro día.");
+
+            dialog.setConfirmText("Ir a Guardar Consumo de Hoy");
+            dialog.setConfirmButtonTheme("primary");
+            dialog.addConfirmListener(event -> {
+                // Navegar a la vista de registro de consumo de HOY para guardar
+                UI.getCurrent().navigate(RegistroConsumoListView.class);
+            });
+
+            // SIN botón de cancelar - es obligatorio
+            dialog.setCancelable(false);
+            dialog.setCloseOnEsc(false);
+
+            dialog.open();
+        } else {
+            // No hay registros pendientes de guardar, permitir navegar al día seleccionado
+            String fechaParam = fechaSeleccionada.toString(); // formato: yyyy-MM-dd
+            UI.getCurrent().navigate("registro-consumo?fecha=" + fechaParam);
+        }
     }
 
     private HorizontalLayout crearLeyenda() {

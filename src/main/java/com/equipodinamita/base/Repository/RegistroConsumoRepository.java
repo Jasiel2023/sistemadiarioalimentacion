@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;//Permite dividir el contenido w
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;//Metodos automaticos: save, findById, FindAll, DeleteId,COUNT
 
+import com.equipodinamita.base.models.ConsumoDiario;
 import com.equipodinamita.base.models.Cuenta;
 import com.equipodinamita.base.models.HorarioAlimenticioEnum;
 import com.equipodinamita.base.models.RegistroConsumo;
@@ -22,4 +23,15 @@ public interface RegistroConsumoRepository extends JpaRepository<RegistroConsumo
             Pageable pageable);
 
     List<RegistroConsumo> findAllByCuenta(Cuenta cuenta);
+
+    // Métodos filtrados por ConsumoDiario (para filtrar por fecha)
+    List<RegistroConsumo> findAllByConsumoDiario(ConsumoDiario consumoDiario);
+
+    Slice<RegistroConsumo> findByConsumoDiario(ConsumoDiario consumoDiario, Pageable pageable);
+
+    List<RegistroConsumo> findByConsumoDiarioAndHorarioAlimenticio(ConsumoDiario consumoDiario,
+            HorarioAlimenticioEnum horarioAlimenticio);
+
+    Slice<RegistroConsumo> findByConsumoDiarioAndHorarioAlimenticio(ConsumoDiario consumoDiario,
+            HorarioAlimenticioEnum horarioAlimenticio, Pageable pageable);
 }
