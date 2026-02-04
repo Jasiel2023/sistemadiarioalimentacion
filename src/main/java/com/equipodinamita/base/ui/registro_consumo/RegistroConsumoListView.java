@@ -961,7 +961,8 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         // Barra de progreso con gradiente
         Div barFill = new Div();
         barFill.getStyle()
-                .set("width", String.format("%.1f%%", porcentaje))
+                .set("width", String.format("%.1f%%", Math.max(porcentaje, 12))) // Mínimo 12% para mostrar el
+                                                                                 // porcentaje
                 .set("height", "100%")
                 .set("background", barGradient)
                 .set("border-radius", "14px")
@@ -971,16 +972,14 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .set("justify-content", "center")
                 .set("box-shadow", "0 2px 8px " + hexToRgba(color, 0.4) + ", inset 0 1px 0 rgba(255, 255, 255, 0.3)");
 
-        // Porcentaje dentro de la barra si es suficientemente grande
-        if (porcentaje > 15) {
-            Span porcentajeEnBarra = new Span(String.format("%.0f%%", porcentaje));
-            porcentajeEnBarra.getStyle()
-                    .set("color", "#ffffff")
-                    .set("font-weight", "700")
-                    .set("font-size", "12px")
-                    .set("text-shadow", "0 1px 2px rgba(0, 0, 0, 0.2)");
-            barFill.add(porcentajeEnBarra);
-        }
+        // Porcentaje siempre dentro de la barra (centrado)
+        Span porcentajeEnBarra = new Span(String.format("%.0f%%", porcentaje));
+        porcentajeEnBarra.getStyle()
+                .set("color", "#ffffff")
+                .set("font-weight", "700")
+                .set("font-size", "12px")
+                .set("text-shadow", "0 1px 2px rgba(0, 0, 0, 0.3)");
+        barFill.add(porcentajeEnBarra);
 
         barBackground.add(barFill);
         barContainer.add(labelRow, barBackground);
