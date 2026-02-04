@@ -22,11 +22,47 @@ public class AlimentoService {
 
     @Transactional//Abre transaccion, ejecuta metodo,ok? , realiza estos en SQL por parte de Spring
     public void createAlimento(String nombre, Float calorias, Float proteinas, Float carbohidratos, Float grasas, Float porcionBase, UnidadEnum unidadMedida, CategoriaEnum categoria) {
-        if (unidadMedida == null || categoria == null) {
-        throw new IllegalArgumentException(
-            "La unidad de medida y la categoría son obligatorias"
-        );
+    if (nombre == null || nombre.trim().isEmpty()) {
+        throw new IllegalArgumentException("El nombre del alimento es obligatorio");
     }
+
+    // Validar valores numéricos
+    if (calorias == null || calorias < 0) {
+        throw new IllegalArgumentException("Las calorías son obligatorias y deben ser >= 0");
+    }
+
+    if (proteinas == null || proteinas < 0) {
+        throw new IllegalArgumentException("Las proteínas son obligatorias y deben ser >= 0");
+    }
+
+    if (carbohidratos == null || carbohidratos < 0) {
+        throw new IllegalArgumentException("Los carbohidratos son obligatorios y deben ser >= 0");
+    }
+
+    if (grasas == null || grasas < 0) {
+        throw new IllegalArgumentException("Las grasas son obligatorias y deben ser >= 0");
+    }
+
+    if (porcionBase == null || porcionBase <= 0) {
+        throw new IllegalArgumentException("La porción base es obligatoria y debe ser mayor que 0");
+    }
+
+    // Validar enums
+    if (unidadMedida == null) {
+        throw new IllegalArgumentException("La unidad de medida es obligatoria");
+    }
+
+    if (categoria == null) {
+        throw new IllegalArgumentException("La categoría es obligatoria");
+    }
+
+    String nombreNormalizado = nombre.trim();
+    //NO MOFIQUES ESTO OE >:(
+    if (alimentoRepository.existsByNombreIgnoreCase(nombreNormalizado)) {
+        throw new IllegalArgumentException("Ya existe un alimento con ese nombre");
+    }
+
+    
         var alimento = new Alimento(nombre, calorias, proteinas, carbohidratos, grasas, porcionBase, unidadMedida, categoria);
         alimentoRepository.saveAndFlush(alimento);//Guardado ek la base de datos
     }

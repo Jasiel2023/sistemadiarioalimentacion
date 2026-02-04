@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -16,8 +17,7 @@ import jakarta.persistence.OneToMany;
 public class Alimento {
     public static final int DESCRIPTION_MAX_LENGTH = 300;
 
-
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
@@ -29,9 +29,11 @@ public class Alimento {
     private Float porcionBase;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "unidad_medida", length = 50, nullable = false)
     private UnidadEnum unidadMedida;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "categoria", length = 50, nullable = false)
     private CategoriaEnum categoria;
 
     @OneToMany(mappedBy = "alimento", cascade = CascadeType.ALL)
@@ -45,10 +47,11 @@ public class Alimento {
         this.registrosConsumo = registrosConsumo;
     }
 
-    protected Alimento(){
+    protected Alimento() {
     }
 
-    public Alimento(String nombre, Float calorias, Float proteinas, Float carbohidratos, Float grasas, Float porcionBase, UnidadEnum unidadMedida, CategoriaEnum categoria){
+    public Alimento(String nombre, Float calorias, Float proteinas, Float carbohidratos, Float grasas,
+            Float porcionBase, UnidadEnum unidadMedida, CategoriaEnum categoria) {
         setNombre(nombre);
         setCalorias(calorias);
         setProteinas(proteinas);
@@ -59,12 +62,11 @@ public class Alimento {
         setCategoria(categoria);
     }
 
-
-   public Integer getId() { 
+    public Integer getId() {
         return this.id;
     }
 
-    public void setId(Integer id) { 
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -115,7 +117,7 @@ public class Alimento {
     public void setPorcionBase(Float porcionBase) {
         this.porcionBase = porcionBase;
     }
-    
+
     public UnidadEnum getUnidadMedida() {
         return this.unidadMedida;
     }
@@ -124,7 +126,7 @@ public class Alimento {
         this.unidadMedida = unidadMedida;
     }
 
-        public CategoriaEnum getCategoria() {
+    public CategoriaEnum getCategoria() {
         return this.categoria;
     }
 

@@ -23,6 +23,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -272,9 +273,9 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         botonesOpciones.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         botonesOpciones.setAlignItems(FlexComponent.Alignment.CENTER);
         botonesOpciones.setSpacing(true);
-        botonesOpciones.setVisible(false); // Oculto inicialmente
+        botonesOpciones.setVisible(false);
 
-        Button btnDiario = new Button("Resumen de Hoy", new Icon(VaadinIcon.SUN_DOWN), e -> {
+        Button btnDiario = new Button("Resumen de hoy", new Icon(VaadinIcon.SUN_DOWN), e -> {
             openConsumoDiarioDialog();
         });
         btnDiario.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -294,7 +295,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .set("border-radius", "8px")
                 .set("padding", "10px 20px");
 
-        Button btnAlimentos = new Button("Lista de Alimentos", new Icon(VaadinIcon.LIST), e -> {
+        Button btnAlimentos = new Button("Lista de alimentos", new Icon(VaadinIcon.LIST), e -> {
             UI.getCurrent().navigate("alimentos_usuario");
         });
         btnAlimentos.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -306,8 +307,8 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
 
         botonesOpciones.add(btnDiario, btnCalendario, btnAlimentos);
 
-        // Botón principal "Consultar Consumo"
-        Button btnConsultarConsumo = new Button("Consultar Consumo", new Icon(VaadinIcon.SEARCH), e -> {
+        // Botón principal "Consultar consumo"
+        Button btnConsultarConsumo = new Button("Consultar consumo", new Icon(VaadinIcon.SEARCH), e -> {
             botonesOpciones.setVisible(!botonesOpciones.isVisible());
         });
         btnConsultarConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -338,7 +339,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         tituloFechaSpan.setVisible(false); // Inicialmente oculto, se muestra si hay fecha seleccionada
 
         // Botón "Guardar Consumo" para la barra superior
-        Button btnGuardarConsumo = new Button("Guardar Consumo", new Icon(VaadinIcon.CHECK), e -> {
+        Button btnGuardarConsumo = new Button("Guardar consumo", new Icon(VaadinIcon.CHECK), e -> {
             guardarConsumoDiario();
         });
         btnGuardarConsumo.addThemeVariants(ButtonVariant.LUMO_PRIMARY, ButtonVariant.LUMO_SUCCESS);
@@ -351,7 +352,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         fechaContainer.setWidthFull();
         fechaContainer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
         fechaContainer.setPadding(true);
-        fechaContainer.setVisible(false); // Se mostrará cuando haya fecha seleccionada
+        fechaContainer.setVisible(false);
 
         // Actualizar visibilidad del contenedor cuando cambie la fecha
         tituloFechaSpan.addAttachListener(e -> {
@@ -359,7 +360,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         });
 
         add(
-                new ViewToolbar("Registro de Consumo", btnGuardarConsumo),
+                new ViewToolbar("Registro de consumo", btnGuardarConsumo),
                 fechaContainer,
                 cardsWrapper,
                 bottomButtonContainer);
@@ -391,23 +392,58 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
     private void openConsumoDiarioDialog() {
         Dialog dialog = new Dialog();
 
-        // Título dinámico según la fecha
+        // Título dinámico
         LocalDate fecha = getFechaActual();
-        String tituloFecha = fecha.equals(LocalDate.now()) ? "de Hoy"
+        String tituloFecha = fecha.equals(LocalDate.now()) ? "de hoy"
                 : "del " + fecha.getDayOfMonth() + " de " + fecha.getMonth().getDisplayName(TextStyle.FULL, LOCALE_ES);
-        dialog.setHeaderTitle("📊 Resumen de Consumo " + tituloFecha);
+
+        // --- CONTENEDOR DE CABECERA MODERNO ---
+        HorizontalLayout headerContainer = new HorizontalLayout();
+        headerContainer.setWidthFull();
+        headerContainer.setPadding(true);
+        headerContainer.setAlignItems(FlexComponent.Alignment.CENTER);
+        headerContainer.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+
+        // Estilo de Graduado y Sombra Profunda
+        headerContainer.getStyle()
+                .set("background", "linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%)") // Gradiente dinámico
+                .set("border-radius", "12px 12px 0 0") // Bordes más suaves
+                .set("box-shadow", "0 4px 15px rgba(0, 0, 0, 0.2)") // Sombra más realista
+                .set("padding", "20px 30px")
+                .set("border-bottom", "3px solid #ffca28"); // Línea de acento inferior (opcional, un toque de
+                                                            // contraste)
+
+        // Texto con tipografía limpia
+        H3 title = new H3("Resumen de consumo " + tituloFecha);
+        title.getStyle()
+                .set("color", "white")
+                .set("margin", "0")
+                .set("font-weight", "600")
+                .set("letter-spacing", "0.5px")
+                .set("text-shadow", "1px 1px 2px rgba(0,0,0,0.2)")
+                .set("align-self", "center")
+                .set("display", "inline-block");
+
+        headerContainer.add(title);
+
+        // --- CONFIGURACIÓN DEL DIÁLOGO ---
         dialog.setWidth("900px");
         dialog.setHeight("700px");
         dialog.setCloseOnEsc(true);
         dialog.setCloseOnOutsideClick(true);
 
+        // --- CONTENIDO PRINCIPAL ---
         VerticalLayout content = new VerticalLayout();
+        content.setSizeFull();
         content.setPadding(true);
         content.setSpacing(true);
-        content.getStyle().set("overflow-y", "auto");
+        content.getStyle()
+                .set("background-color", "#f8f9fa") // Fondo gris muy claro para resaltar el blanco de las tarjetas
+                                                    // internas
+                .set("border-radius", "0 0 12px 12px");
 
-        // Obtener el ConsumoDiario de la fecha actual (seleccionada o hoy)
-        ConsumoDiario consumoDiarioActual = getConsumoDiarioActual();
+        // Armar la estructura
+        dialog.add(headerContainer, content);
 
         // Calcular totales SOLO de los registros de esa fecha
         ConsumoDiario totalDiario = consumoDiarioService.calcularTotalConsumoDiarioPorFecha(consumoDiarioActual);
@@ -428,12 +464,21 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         VerticalLayout resumenSection = new VerticalLayout();
         resumenSection.setPadding(true);
         resumenSection.getStyle()
-                .set("background-color", "#f5f5f5")
-                .set("border-radius", "12px")
-                .set("margin-bottom", "20px");
+                .set("background", "linear-gradient(145deg, #ffffff 0%, #f0f4f8 100%)")
+                .set("border-radius", "16px")
+                .set("margin-bottom", "20px")
+                .set("box-shadow", "0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)")
+                .set("border", "1px solid rgba(255, 255, 255, 0.8)")
+                .set("backdrop-filter", "blur(10px)")
+                .set("transition", "transform 0.3s ease, box-shadow 0.3s ease");
 
-        H3 tituloResumen = new H3("🍽️ Resumen Total " + tituloFecha);
-        tituloResumen.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+        H3 tituloResumen = new H3("Resumen total " + tituloFecha);
+        tituloResumen.getStyle()
+                .set("margin", "0 0 15px 0")
+                .set("color", "#1a1a2e")
+                .set("font-weight", "700")
+                .set("font-size", "1.3rem")
+                .set("letter-spacing", "0.5px");
 
         HorizontalLayout statsLayout = new HorizontalLayout();
         statsLayout.setWidthFull();
@@ -445,11 +490,20 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 createStatCard("🍞 Carbohidratos", String.format("%.1f g", totalDiario.getCarbohidratos()), "#FFE66D"),
                 createStatCard("🧈 Grasas", String.format("%.1f g", totalDiario.getGrasas()), "#95E1D3"));
 
-        Span totalAlimentos = new Span("📋 Total de alimentos registrados: " + totalDiario.getTotalRegistros());
+        Span totalAlimentos = new Span("Total de alimentos registrados: " + totalDiario.getTotalRegistros());
         totalAlimentos.getStyle()
-                .set("font-size", "16px")
-                .set("font-weight", "bold")
-                .set("margin-top", "15px");
+                .set("font-size", "15px")
+                .set("font-weight", "700")
+                .set("margin-top", "18px")
+                .set("color", "#ffffff")
+                .set("background",
+                        "linear-gradient(135deg, rgba(10, 156, 167, 0.9) 0%, rgba(7, 116, 224, 0.9) 100%)")
+                .set("padding", "12px 20px")
+                .set("border-radius", "10px")
+                .set("box-shadow", "0 2px 8px rgba(0, 0, 0, 0.08)")
+                .set("border", "1px solid rgba(0, 0, 0, 0.05)")
+                .set("align-self", "center")
+                .set("display", "inline-block");
 
         resumenSection.add(tituloResumen, statsLayout, totalAlimentos);
         content.add(resumenSection);
@@ -461,12 +515,21 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         VerticalLayout horarioSection = new VerticalLayout();
         horarioSection.setPadding(true);
         horarioSection.getStyle()
-                .set("background-color", "#e8f4fd")
-                .set("border-radius", "12px")
-                .set("margin-bottom", "20px");
+                .set("background", "linear-gradient(145deg, #e3f2fd 0%, #bbdefb 50%, #e1f5fe 100%)")
+                .set("border-radius", "16px")
+                .set("margin-bottom", "20px")
+                .set("box-shadow", "0 8px 32px rgba(33, 150, 243, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05)")
+                .set("border", "1px solid rgba(255, 255, 255, 0.6)")
+                .set("backdrop-filter", "blur(10px)")
+                .set("transition", "transform 0.3s ease, box-shadow 0.3s ease");
 
-        H3 tituloHorarios = new H3("⏰ Consumo por Tipo de Comida " + tituloFecha);
-        tituloHorarios.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+        H3 tituloHorarios = new H3("Consumo por tipo de comida " + tituloFecha);
+        tituloHorarios.getStyle()
+                .set("margin", "0 0 15px 0")
+                .set("color", "#0d47a1")
+                .set("font-weight", "700")
+                .set("font-size", "1.3rem")
+                .set("letter-spacing", "0.5px");
         horarioSection.add(tituloHorarios);
 
         HorizontalLayout horariosGrid = new HorizontalLayout();
@@ -482,26 +545,49 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         }
 
         horarioSection.add(horariosGrid);
+
+        // === GRÁFICO DE PASTEL: Distribución de calorías por tipo de comida ===
+        VerticalLayout pieChartSection = createPieChartSection(consumoPorHorario, totalDiario.getCalorias());
+        horarioSection.add(pieChartSection);
+
         content.add(horarioSection);
 
         // === Seccion del total de calorias de un dia===
         Span totalCaloriasDia = new Span(
-                "🔥 Total de Calorías " + tituloFecha + ": " + String.format("%.1f kcal", totalDiario.getCalorias()));
+                "Total de calorías " + tituloFecha + ": " + String.format("%.1f kcal", totalDiario.getCalorias()));
         totalCaloriasDia.getStyle()
                 .set("font-size", "18px")
-                .set("font-weight", "bold")
-                .set("margin", "10px 0");
+                .set("font-weight", "800")
+                .set("margin", "15px 0")
+                .set("color", "#ffffff")
+                .set("background", "linear-gradient(135deg, #667eea 0%, #764ba2 100%)")
+                .set("padding", "16px 28px")
+                .set("border-radius", "14px")
+                .set("box-shadow", "0 8px 25px rgba(102, 126, 234, 0.4)")
+                .set("letter-spacing", "0.5px")
+                .set("text-shadow", "0 2px 4px rgba(0, 0, 0, 0.15)")
+                .set("display", "inline-block")
+                .set("transition", "transform 0.3s ease, box-shadow 0.3s ease");
         content.add(totalCaloriasDia);
 
         // === SECCIÓN: DETALLE DE ALIMENTOS ===
         VerticalLayout detalleSection = new VerticalLayout();
         detalleSection.setPadding(true);
         detalleSection.getStyle()
-                .set("background-color", "#fff3e0")
-                .set("border-radius", "12px");
+                .set("background", "linear-gradient(145deg, #fff8e1 0%, #ffecb3 50%, #ffe0b2 100%)")
+                .set("border-radius", "16px")
+                .set("box-shadow", "0 8px 32px rgba(255, 152, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.05)")
+                .set("border", "1px solid rgba(255, 255, 255, 0.6)")
+                .set("backdrop-filter", "blur(10px)")
+                .set("transition", "transform 0.3s ease, box-shadow 0.3s ease");
 
-        H3 tituloDetalle = new H3("📝 Detalle de Alimentos Consumidos");
-        tituloDetalle.getStyle().set("margin", "0 0 15px 0").set("color", "#333");
+        H3 tituloDetalle = new H3("📝 Detalle de alimentos consumidos");
+        tituloDetalle.getStyle()
+                .set("margin", "0 0 15px 0")
+                .set("color", "#e65100")
+                .set("font-weight", "700")
+                .set("font-size", "1.3rem")
+                .set("letter-spacing", "0.5px");
         detalleSection.add(tituloDetalle);
 
         // Grid con los alimentos detallados
@@ -589,32 +675,107 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         VerticalLayout card = new VerticalLayout();
         card.setAlignItems(FlexComponent.Alignment.CENTER);
         card.setPadding(true);
+
+        // Crear gradiente dinámico basado en el color
+        String gradientColor = createGradientFromColor(color);
+
         card.getStyle()
-                .set("background-color", color)
-                .set("border-radius", "10px")
-                .set("min-width", "140px")
-                .set("color", "#fff");
+                .set("background", gradientColor)
+                .set("border-radius", "16px")
+                .set("min-width", "150px")
+                .set("color", "#fff")
+                .set("box-shadow", "0 10px 30px " + hexToRgba(color, 0.4) + ", 0 4px 12px rgba(0, 0, 0, 0.1)")
+                .set("border", "1px solid rgba(255, 255, 255, 0.3)")
+                .set("backdrop-filter", "blur(10px)")
+                .set("transition", "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)")
+                .set("cursor", "pointer")
+                .set("position", "relative")
+                .set("overflow", "hidden");
 
         Span tituloSpan = new Span(titulo);
-        tituloSpan.getStyle().set("font-size", "12px").set("font-weight", "bold");
+        tituloSpan.getStyle()
+                .set("font-size", "13px")
+                .set("font-weight", "600")
+                .set("text-transform", "uppercase")
+                .set("letter-spacing", "0.5px")
+                .set("opacity", "0.95");
 
         Span valorSpan = new Span(valor);
-        valorSpan.getStyle().set("font-size", "18px").set("font-weight", "bold");
+        valorSpan.getStyle()
+                .set("font-size", "22px")
+                .set("font-weight", "800")
+                .set("text-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)")
+                .set("margin-top", "8px");
 
         card.add(tituloSpan, valorSpan);
         return card;
+    }
+
+    // Helper method para crear gradiente desde un color
+    private String createGradientFromColor(String color) {
+        return "linear-gradient(135deg, " + color + " 0%, " + darkenColor(color, 20) + " 100%)";
+    }
+
+    // Helper method para oscurecer un color hex
+    private String darkenColor(String hexColor, int percent) {
+        try {
+            int r = Integer.parseInt(hexColor.substring(1, 3), 16);
+            int g = Integer.parseInt(hexColor.substring(3, 5), 16);
+            int b = Integer.parseInt(hexColor.substring(5, 7), 16);
+
+            r = Math.max(0, r - (r * percent / 100));
+            g = Math.max(0, g - (g * percent / 100));
+            b = Math.max(0, b - (b * percent / 100));
+
+            return String.format("#%02x%02x%02x", r, g, b);
+        } catch (Exception e) {
+            return hexColor;
+        }
+    }
+
+    // Helper method para convertir hex a rgba
+    private String hexToRgba(String hexColor, double alpha) {
+        try {
+            int r = Integer.parseInt(hexColor.substring(1, 3), 16);
+            int g = Integer.parseInt(hexColor.substring(3, 5), 16);
+            int b = Integer.parseInt(hexColor.substring(5, 7), 16);
+            return String.format("rgba(%d, %d, %d, %.2f)", r, g, b, alpha);
+        } catch (Exception e) {
+            return "rgba(0, 0, 0, " + alpha + ")";
+        }
     }
 
     private VerticalLayout createHorarioCard(HorarioAlimenticioEnum horario, ConsumoDiario consumo) {
         VerticalLayout card = new VerticalLayout();
         card.setAlignItems(FlexComponent.Alignment.CENTER);
         card.setPadding(true);
+
+        // Colores dinámicos según el horario
+        String gradientColor = switch (horario) {
+            case DESAYUNO -> "linear-gradient(145deg, #FF9800 0%, #F57C00 100%)";
+            case ALMUERZO -> "linear-gradient(145deg, #4CAF50 0%, #388E3C 100%)";
+            case CENA -> "linear-gradient(145deg, #3F51B5 0%, #303F9F 100%)";
+            case ENTRETIEMPOS -> "linear-gradient(145deg, #9C27B0 0%, #7B1FA2 100%)";
+        };
+
+        String shadowColor = switch (horario) {
+            case DESAYUNO -> "rgba(255, 152, 0, 0.4)";
+            case ALMUERZO -> "rgba(76, 175, 80, 0.4)";
+            case CENA -> "rgba(63, 81, 181, 0.4)";
+            case ENTRETIEMPOS -> "rgba(156, 39, 176, 0.4)";
+        };
+
         card.getStyle()
-                .set("background-color", "#ffffff")
-                .set("border-radius", "10px")
-                .set("box-shadow", "0 2px 4px rgba(0,0,0,0.1)")
+                .set("background", gradientColor)
+                .set("border-radius", "16px")
+                .set("box-shadow", "0 8px 24px " + shadowColor + ", 0 4px 8px rgba(0,0,0,0.1)")
                 .set("min-width", "180px")
-                .set("margin", "5px");
+                .set("margin", "8px")
+                .set("border", "1px solid rgba(255, 255, 255, 0.3)")
+                .set("backdrop-filter", "blur(10px)")
+                .set("transition", "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)")
+                .set("cursor", "pointer")
+                .set("padding", "20px");
 
         String emoji = switch (horario) {
             case DESAYUNO -> "🌅";
@@ -624,16 +785,241 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         };
 
         Span tituloSpan = new Span(emoji + " " + horario.name());
-        tituloSpan.getStyle().set("font-weight", "bold").set("font-size", "14px");
+        tituloSpan.getStyle()
+                .set("font-weight", "700")
+                .set("font-size", "16px")
+                .set("color", "white")
+                .set("text-transform", "uppercase")
+                .set("letter-spacing", "1px")
+                .set("text-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
 
-        Span registrosSpan = new Span("Alimentos: " + consumo.getTotalRegistros());
-        registrosSpan.getStyle().set("font-size", "12px").set("color", "#666");
+        Span registrosSpan = new Span("🍽️ " + consumo.getTotalRegistros() + " alimentos");
+        registrosSpan.getStyle()
+                .set("font-size", "13px")
+                .set("color", "rgba(255, 255, 255, 0.9)")
+                .set("margin-top", "8px")
+                .set("background", "rgba(255, 255, 255, 0.15)")
+                .set("padding", "4px 12px")
+                .set("border-radius", "20px");
 
-        Span caloriasSpan = new Span(String.format("%.1f kcal", consumo.getCalorias()));
-        caloriasSpan.getStyle().set("font-size", "16px").set("font-weight", "bold").set("color", "#FF6B6B");
+        Span caloriasSpan = new Span(String.format("🔥 %.1f kcal", consumo.getCalorias()));
+        caloriasSpan.getStyle()
+                .set("font-size", "18px")
+                .set("font-weight", "800")
+                .set("color", "white")
+                .set("margin-top", "10px")
+                .set("text-shadow", "0 2px 4px rgba(0, 0, 0, 0.3)");
 
         card.add(tituloSpan, registrosSpan, caloriasSpan);
         return card;
+    }
+
+    /**
+     * Crea la sección del gráfico de barras con la distribución de calorías por
+     * tipo de comida
+     */
+    private VerticalLayout createPieChartSection(Map<HorarioAlimenticioEnum, ConsumoDiario> consumoPorHorario,
+            float totalCalorias) {
+        VerticalLayout section = new VerticalLayout();
+        section.setAlignItems(FlexComponent.Alignment.CENTER);
+        section.setPadding(true);
+        section.setSpacing(true);
+        section.getStyle()
+                .set("margin-top", "20px")
+                .set("background", "linear-gradient(145deg, #ffffff 0%, #f5f7fa 100%)")
+                .set("border-radius", "16px")
+                .set("padding", "24px")
+                .set("box-shadow", "0 4px 20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)")
+                .set("border", "1px solid rgba(0, 0, 0, 0.05)")
+                .set("transition", "transform 0.3s ease, box-shadow 0.3s ease");
+
+        H3 tituloPie = new H3("Distribución de calorías por tipo de comida");
+        tituloPie.getStyle()
+                .set("margin", "0 0 20px 0")
+                .set("color", "#1a1a2e")
+                .set("font-weight", "700")
+                .set("font-size", "1.2rem")
+                .set("letter-spacing", "0.3px")
+                .set("align-self", "center")
+                .set("display", "inline-block");
+
+        // Colores para cada tipo de comida
+        String colorDesayuno = "#bb7813";
+        String colorAlmuerzo = "#4CAF50";
+        String colorCena = "#2196F3";
+        String colorEntretiempos = "#9C27B0";
+
+        // Obtener calorías de cada horario
+        float calDesayuno = consumoPorHorario.containsKey(HorarioAlimenticioEnum.DESAYUNO)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.DESAYUNO).getCalorias()
+                : 0;
+        float calAlmuerzo = consumoPorHorario.containsKey(HorarioAlimenticioEnum.ALMUERZO)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.ALMUERZO).getCalorias()
+                : 0;
+        float calCena = consumoPorHorario.containsKey(HorarioAlimenticioEnum.CENA)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.CENA).getCalorias()
+                : 0;
+        float calEntretiempos = consumoPorHorario.containsKey(HorarioAlimenticioEnum.ENTRETIEMPOS)
+                ? consumoPorHorario.get(HorarioAlimenticioEnum.ENTRETIEMPOS).getCalorias()
+                : 0;
+
+        // Calcular porcentajes
+        float porcDesayuno = totalCalorias > 0 ? (calDesayuno / totalCalorias) * 100 : 0;
+        float porcAlmuerzo = totalCalorias > 0 ? (calAlmuerzo / totalCalorias) * 100 : 0;
+        float porcCena = totalCalorias > 0 ? (calCena / totalCalorias) * 100 : 0;
+        float porcEntretiempos = totalCalorias > 0 ? (calEntretiempos / totalCalorias) * 100 : 0;
+
+        // Contenedor del gráfico de barras
+        VerticalLayout barChartContainer = new VerticalLayout();
+        barChartContainer.setWidthFull();
+        barChartContainer.setSpacing(true);
+        barChartContainer.setPadding(false);
+        barChartContainer.getStyle().set("max-width", "500px");
+
+        // Crear barras para cada tipo de comida
+        if (calDesayuno > 0) {
+            barChartContainer.add(createBarItem("Desayuno", colorDesayuno, porcDesayuno, calDesayuno));
+        }
+        if (calAlmuerzo > 0) {
+            barChartContainer.add(createBarItem("Almuerzo", colorAlmuerzo, porcAlmuerzo, calAlmuerzo));
+        }
+        if (calCena > 0) {
+            barChartContainer.add(createBarItem("Cena", colorCena, porcCena, calCena));
+        }
+        if (calEntretiempos > 0) {
+            barChartContainer
+                    .add(createBarItem("Entretiempos", colorEntretiempos, porcEntretiempos, calEntretiempos));
+        }
+
+        // Determinar en qué tipo de comida se consumió más calorías
+        String mensajeMayorConsumo = determinarMayorConsumo(calDesayuno, calAlmuerzo, calCena, calEntretiempos);
+
+        Span mensajeSpan = new Span(mensajeMayorConsumo);
+        mensajeSpan.getStyle()
+                .set("font-size", "15px")
+                .set("font-weight", "700")
+                .set("color", "#ffffff")
+                .set("background", "linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%)")
+                .set("padding", "14px 24px")
+                .set("border-radius", "12px")
+                .set("margin-top", "20px")
+                .set("text-align", "center")
+                .set("box-shadow", "0 4px 15px rgba(165, 54, 54, 0.4)")
+                .set("letter-spacing", "0.3px")
+                .set("transition", "transform 0.3s ease, box-shadow 0.3s ease");
+
+        section.add(tituloPie, barChartContainer, mensajeSpan);
+        return section;
+    }
+
+    /**
+     * Crea una barra del gráfico de barras
+     */
+    private VerticalLayout createBarItem(String nombre, String color, float porcentaje, float calorias) {
+        VerticalLayout barContainer = new VerticalLayout();
+        barContainer.setWidthFull();
+        barContainer.setSpacing(false);
+        barContainer.setPadding(false);
+        barContainer.getStyle()
+                .set("margin-bottom", "14px")
+                .set("padding", "12px 16px")
+                .set("background", "linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%)")
+                .set("border-radius", "12px")
+                .set("box-shadow", "0 2px 8px rgba(0, 0, 0, 0.06)")
+                .set("transition", "transform 0.2s ease, box-shadow 0.2s ease");
+
+        // Etiqueta con nombre y valores
+        HorizontalLayout labelRow = new HorizontalLayout();
+        labelRow.setWidthFull();
+        labelRow.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+        labelRow.setAlignItems(FlexComponent.Alignment.CENTER);
+
+        Span nombreSpan = new Span(nombre);
+        nombreSpan.getStyle()
+                .set("font-weight", "700")
+                .set("font-size", "14px")
+                .set("color", "#2d3436");
+
+        Span valorSpan = new Span(String.format("%.1f%% (%.0f kcal)", porcentaje, calorias));
+        valorSpan.getStyle()
+                .set("font-size", "13px")
+                .set("font-weight", "600")
+                .set("color", color)
+                .set("background", hexToRgba(color, 0.1))
+                .set("padding", "4px 10px")
+                .set("border-radius", "20px");
+
+        labelRow.add(nombreSpan, valorSpan);
+
+        // Contenedor de la barra (fondo gris moderno)
+        Div barBackground = new Div();
+        barBackground.getStyle()
+                .set("width", "100%")
+                .set("height", "28px")
+                .set("background", "linear-gradient(90deg, #e8e8e8 0%, #f0f0f053 100%)")
+                .set("border-radius", "14px")
+                .set("overflow", "hidden")
+                .set("margin-top", "10px")
+                .set("box-shadow", "inset 0 2px 4px rgba(0, 0, 0, 0.06)");
+
+        // Crear gradiente dinámico para la barra
+        String barGradient = "linear-gradient(90deg, " + color + " 0%, " + darkenColor(color, 15) + " 100%)";
+
+        // Barra de progreso con gradiente
+        Div barFill = new Div();
+        barFill.getStyle()
+                .set("width", String.format("%.1f%%", porcentaje))
+                .set("height", "100%")
+                .set("background", barGradient)
+                .set("border-radius", "14px")
+                .set("transition", "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)")
+                .set("display", "flex")
+                .set("align-items", "center")
+                .set("justify-content", "center")
+                .set("box-shadow", "0 2px 8px " + hexToRgba(color, 0.4) + ", inset 0 1px 0 rgba(255, 255, 255, 0.3)");
+
+        // Porcentaje dentro de la barra si es suficientemente grande
+        if (porcentaje > 15) {
+            Span porcentajeEnBarra = new Span(String.format("%.0f%%", porcentaje));
+            porcentajeEnBarra.getStyle()
+                    .set("color", "#ffffff")
+                    .set("font-weight", "700")
+                    .set("font-size", "12px")
+                    .set("text-shadow", "0 1px 2px rgba(0, 0, 0, 0.2)");
+            barFill.add(porcentajeEnBarra);
+        }
+
+        barBackground.add(barFill);
+        barContainer.add(labelRow, barBackground);
+
+        return barContainer;
+    }
+
+    /**
+     * Determina el mensaje indicando en qué tipo de comida se consumieron más
+     * calorías
+     */
+    private String determinarMayorConsumo(float calDesayuno, float calAlmuerzo, float calCena, float calEntretiempos) {
+        float maxCalorias = Math.max(Math.max(calDesayuno, calAlmuerzo), Math.max(calCena, calEntretiempos));
+
+        if (maxCalorias == 0) {
+            return "No hay datos de consumo registrados";
+        }
+
+        String tipoComida;
+
+        if (maxCalorias == calDesayuno) {
+            tipoComida = "DESAYUNO";
+        } else if (maxCalorias == calAlmuerzo) {
+            tipoComida = "ALMUERZO";
+        } else if (maxCalorias == calCena) {
+            tipoComida = "CENA";
+        } else {
+            tipoComida = "ENTRETIEMPOS";
+        }
+
+        return String.format("El mayor consumo de calorías fue en %s con %.0f kcal",
+                tipoComida, maxCalorias);
     }
 
     private VerticalLayout createBreakfastCard() {

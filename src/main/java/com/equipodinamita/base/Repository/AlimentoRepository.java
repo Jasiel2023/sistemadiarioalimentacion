@@ -8,4 +8,5 @@ import com.equipodinamita.base.models.Alimento;//Ayuda con filtros ,Busquedas Co
 
 public interface AlimentoRepository extends JpaRepository <Alimento, Integer>{
     Slice<Alimento> findAllBy(Pageable pageable);
+    boolean existsByNombreIgnoreCase(String nombre);
 }

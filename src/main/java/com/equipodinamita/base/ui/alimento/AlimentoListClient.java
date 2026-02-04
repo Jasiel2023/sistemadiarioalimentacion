@@ -11,7 +11,6 @@ import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import static com.vaadin.flow.spring.data.VaadinSpringDataHelpers.toSpringPageRequest;
-
 @Route(value = "alimentos_usuario", layout = MainLayout.class)
 @PageTitle("Alimentos_usuario")
 // @Menu(order = 1, icon = "vaadin:list", title = "Alimentos")
