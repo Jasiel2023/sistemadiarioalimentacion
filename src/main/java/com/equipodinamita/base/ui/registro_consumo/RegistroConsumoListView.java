@@ -485,10 +485,10 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         statsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.AROUND);
 
         statsLayout.add(
-                createStatCard("🔥 Calorías", String.format("%.1f kcal", totalDiario.getCalorias()), "#FF6B6B"),
-                createStatCard("🥩 Proteínas", String.format("%.1f g", totalDiario.getProteinas()), "#4ECDC4"),
-                createStatCard("🍞 Carbohidratos", String.format("%.1f g", totalDiario.getCarbohidratos()), "#FFE66D"),
-                createStatCard("🧈 Grasas", String.format("%.1f g", totalDiario.getGrasas()), "#95E1D3"));
+                createStatCard("Calorías", String.format("%.1f kcal", totalDiario.getCalorias()), "#FF6B6B"),
+                createStatCard("Proteínas", String.format("%.1f g", totalDiario.getProteinas()), "#4ECDC4"),
+                createStatCard("Carbohidratos", String.format("%.1f g", totalDiario.getCarbohidratos()), "#FFE66D"),
+                createStatCard("Grasas", String.format("%.1f g", totalDiario.getGrasas()), "#95E1D3"));
 
         Span totalAlimentos = new Span("Total de alimentos registrados: " + totalDiario.getTotalRegistros());
         totalAlimentos.getStyle()
@@ -759,8 +759,8 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
         };
 
         String shadowColor = switch (horario) {
-            case DESAYUNO -> "rgba(255, 152, 0, 0.4)";
-            case ALMUERZO -> "rgba(76, 175, 80, 0.4)";
+            case DESAYUNO -> "rgba(239, 151, 20, 0.9)";
+            case ALMUERZO -> "rgb(43, 167, 47)";
             case CENA -> "rgba(63, 81, 181, 0.4)";
             case ENTRETIEMPOS -> "rgba(156, 39, 176, 0.4)";
         };
@@ -777,14 +777,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .set("cursor", "pointer")
                 .set("padding", "20px");
 
-        String emoji = switch (horario) {
-            case DESAYUNO -> "🌅";
-            case ALMUERZO -> "☀️";
-            case CENA -> "🌙";
-            case ENTRETIEMPOS -> "🍿";
-        };
-
-        Span tituloSpan = new Span(emoji + " " + horario.name());
+        Span tituloSpan = new Span(horario.name());
         tituloSpan.getStyle()
                 .set("font-weight", "700")
                 .set("font-size", "16px")
@@ -793,7 +786,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .set("letter-spacing", "1px")
                 .set("text-shadow", "0 2px 4px rgba(0, 0, 0, 0.2)");
 
-        Span registrosSpan = new Span("🍽️ " + consumo.getTotalRegistros() + " alimentos");
+        Span registrosSpan = new Span(consumo.getTotalRegistros() + " alimentos");
         registrosSpan.getStyle()
                 .set("font-size", "13px")
                 .set("color", "rgba(255, 255, 255, 0.9)")
@@ -802,7 +795,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .set("padding", "4px 12px")
                 .set("border-radius", "20px");
 
-        Span caloriasSpan = new Span(String.format("🔥 %.1f kcal", consumo.getCalorias()));
+        Span caloriasSpan = new Span(String.format("%.1f kcal", consumo.getCalorias()));
         caloriasSpan.getStyle()
                 .set("font-size", "18px")
                 .set("font-weight", "800")
@@ -844,7 +837,7 @@ public class RegistroConsumoListView extends VerticalLayout implements BeforeEnt
                 .set("display", "inline-block");
 
         // Colores para cada tipo de comida
-        String colorDesayuno = "#bb7813";
+        String colorDesayuno = "#d46408";
         String colorAlmuerzo = "#4CAF50";
         String colorCena = "#2196F3";
         String colorEntretiempos = "#9C27B0";
